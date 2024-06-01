@@ -44,12 +44,9 @@ class Player:
 
             return len(lines) * font.get_linesize()  # Возвращает количество пикселей, занятых текстом
 
-        # Drawing the name
-        y_offset += draw_text(self.name, 200, 10 + y_offset, 350, font, TEXT_COLOR) + 5
-
         # Drawing the characteristics
         for characteristic in self.characteristics:
-            y_offset += draw_text(characteristic, 1200, 10 + y_offset, 400, font, TEXT_COLOR) + 5
+            y_offset += draw_text(characteristic, 1095,  90 + y_offset, 490, font, TEXT_COLOR) + 5
 
 def load_array(filename):
     try:
@@ -71,10 +68,11 @@ def choose_rare(filename1,filename2,filename3):
 
     return value if value else "No available value"
 
-def create_player(x, y):
+def create_player(x, y, n):
     profile = []
-    profile.append('КАРТОЧКА ИГРОКА')
-    profile.append('Био-характеристика: '+choose_rare("data/gender/common_gender.txt","data/gender/unusual_gender.txt","data/gender/rare_gender.txt")+' / Возраст '+choose_rare("data/age/common_age.txt","data/age/unusual_age.txt","data/age/rare_age.txt"))
+    profile.append('КАРТОЧКА ИГРОКА '+str(n))
+    profile.append('Био-характеристика: '+choose_rare("data/sex/common_sex.txt","data/sex/unusual_sex.txt","data/sex/rare_sex.txt")+' / Возраст '+choose_rare("data/age/common_age.txt","data/age/unusual_age.txt","data/age/rare_age.txt"))
+    profile.append('Ориентация: '+choose_rare("data/gender/common_gender.txt","data/gender/unusual_gender.txt","data/gender/rare_gender.txt"))
     profile.append('Состояние здоровья: '+choose_rare("data/health/common_health.txt","data/health/unusual_health.txt","data/health/rare_health.txt"))
     profile.append('Черта характера: '+random.choice(load_array("data/personality.txt")))
     profile.append('Карта условия: '+random.choice(load_array("data/condition.txt")))
@@ -82,4 +80,4 @@ def create_player(x, y):
     return Player(x, y, "Player", profile)
 
 if __name__ == "__main__":
-    create_player(100, 100)
+    create_player(100, 100, 1)
