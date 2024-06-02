@@ -3,11 +3,11 @@ from random import randint
 import pygame
 
 # Константы
-PLAYER_SIZE = 100
-PLAYER_COLOR = (255, 0, 0)
+PLAYER_SIZE = 150
+PLAYER_COLOR = (90, 90, 90)
 TEXT_COLOR = (255, 255, 255)
 FONT_SIZE = 20
-CPERCENT = 50
+CPERCENT = 60
 UPERCENT = 30
 
 # Класс игрока
@@ -73,8 +73,12 @@ def create_player(x, y, n):
     profile.append('КАРТОЧКА ИГРОКА '+str(n))
     profile.append('Био-характеристика: '+choose_rare("data/sex/common_sex.txt","data/sex/unusual_sex.txt","data/sex/rare_sex.txt")+' / Возраст '+choose_rare("data/age/common_age.txt","data/age/unusual_age.txt","data/age/rare_age.txt"))
     profile.append('Ориентация: '+choose_rare("data/gender/common_gender.txt","data/gender/unusual_gender.txt","data/gender/rare_gender.txt"))
+    profile.append('Род деятельности: '+choose_rare("data/job/common_job.txt","data/job/unusual_job.txt","data/job/rare_job.txt"))
     profile.append('Состояние здоровья: '+choose_rare("data/health/common_health.txt","data/health/unusual_health.txt","data/health/rare_health.txt"))
+    profile.append('Хобби: '+choose_rare("data/hobby/common_hobby.txt","data/hobby/unusual_hobby.txt","data/hobby/rare_hobby.txt"))
     profile.append('Черта характера: '+random.choice(load_array("data/personality.txt")))
+    profile.append('Факт: '+choose_rare("data/fact/common_fact.txt","data/fact/unusual_fact.txt","data/fact/rare_fact.txt"))
+    profile.append('Багаж: '+choose_rare("data/bagage/common_bagage.txt","data/bagage/unusual_bagage.txt","data/bagage/rare_bagage.txt"))
     profile.append('Карта условия: '+random.choice(load_array("data/condition.txt")))
     if __name__ == "__main__": print(profile)
     return Player(x, y, "Player", profile)

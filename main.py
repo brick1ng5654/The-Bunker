@@ -6,22 +6,17 @@ from player_init import *
 pygame.init()
 
 # Константы
-BG_COLOR = (212, 207, 201)
+MAIN_COLOR = (212, 207, 201)
 PLAYER_SIZE = 100
-BUTTON_WIDTH = 25
-BUTTON_HEIGHT = 25
-PLAYER_COLOR = (255, 0, 0)
-TEXT_COLOR = (255, 255, 255)
+BUTTON_SIZE = 25
+PLAYER_COLOR = (90, 90, 90)
 FONT_SIZE = 35
-BUTTON_COLOR = (212, 207, 201)
-BUTTON_HOVER_COLOR = (255, 0, 0)
-BUTTON_TEXT_COLOR = (255, 255, 255)
 HEADER_HEIGHT = 35
-HEADER_COLOR_START = (18, 4, 150)
-HEADER_COLOR_MIDDLE = (90, 110, 195)
-HEADER_COLOR_END = (160, 200, 240)
-FONT_COLOR = (255, 255, 255)
+DARK_BLUE = (18, 4, 150)
+BLUE = (90, 110, 195)
+LIGHT_BLUE = (160, 200, 240)
 BLACK_COLOR = (0, 0, 0)
+WHITE_COLOR = (255, 255, 255)
 DARK_GREY = (70, 70, 70)
 LIGHT_GREY = (180, 180, 180)
 
@@ -33,14 +28,14 @@ except FileNotFoundError:
     print(f"Error: Could not find the font file at {FONT_PATH}")
     font = pygame.font.Font(None, FONT_SIZE)  # Используйте стандартный шрифт Pygame в случае ошибки
 
-def draw_button_with_shadow(screen, x, y, w, h, button_color, hover_color, text, text_color, font):
+def draw_button_with_shadow(screen, x, y, w, h, button_color, active_color, text, text_color, font):
     # Определяем положение мыши и нажатие кнопок
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
 
     # Проверяем, находится ли курсор мыши над кнопкой
     if x + w > mouse[0] > x and y + h > mouse[1] > y:
-        current_color = LIGHT_GREY
+        current_color = active_color
         if click[0] == 1:
             return True
     else:
@@ -84,17 +79,17 @@ def draw_static_window_with_shadow(screen, x, y, w, h, window_color):
 
 def draw_header(screen, width, height):
     # Рисуем градиентную полосу заголовка
-    draw_gradient_rect(screen, (0, 0, width, HEADER_HEIGHT), HEADER_COLOR_START, HEADER_COLOR_END)
+    draw_gradient_rect(screen, (0, 0, width, HEADER_HEIGHT), DARK_BLUE, LIGHT_BLUE)
     
     # Текст заголовка
-    title_surface = font.render("The Bunker", True, FONT_COLOR)
+    title_surface = font.render("The Bunker", True, WHITE_COLOR)
     screen.blit(title_surface, (10, 2))
     
     # Кнопка выхода с тенью
-    exit_button = draw_button_with_shadow(screen, width - BUTTON_WIDTH - 10, 5, BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_COLOR, BUTTON_HOVER_COLOR, "X", BLACK_COLOR, font)
+    exit_button = draw_button_with_shadow(screen, width - BUTTON_SIZE - 10, 5, BUTTON_SIZE, BUTTON_SIZE, MAIN_COLOR, LIGHT_GREY, "X", BLACK_COLOR, font)
     
     # Кнопка сворачивания с тенью
-    minimize_button = draw_button_with_shadow(screen, width - 2 * BUTTON_WIDTH - 20, 5, BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_COLOR, BUTTON_HOVER_COLOR, "—", BLACK_COLOR, font)
+    minimize_button = draw_button_with_shadow(screen, width - 2 * BUTTON_SIZE - 20, 5, BUTTON_SIZE, BUTTON_SIZE, MAIN_COLOR, LIGHT_GREY, "—", BLACK_COLOR, font)
     
     # Неподвижное окно с тенью
     static_window_x = width - 520  # Отступ от правого края
@@ -106,9 +101,9 @@ def draw_header(screen, width, height):
     # Градиентная полоса сверху серого окна с текстом "Information"
     info_header_height = 35
     info_header_rect = pygame.Rect(static_window_x, static_window_y, static_window_width, info_header_height)
-    draw_gradient_rect(screen, info_header_rect, HEADER_COLOR_MIDDLE, HEADER_COLOR_MIDDLE)
+    draw_gradient_rect(screen, info_header_rect, BLUE, BLUE)
     
-    info_title_surface = font.render("Information", True, FONT_COLOR)
+    info_title_surface = font.render("Information", True, WHITE_COLOR)
     info_title_rect = info_title_surface.get_rect(center=(static_window_x + static_window_width / 2, static_window_y + info_header_height / 2))
     screen.blit(info_title_surface, info_title_rect)
     
@@ -125,19 +120,19 @@ def main():
     screen_width, screen_height = pygame.display.get_window_size()
 
     players = []
-    n = 3
+    n = 4
     a = 100
     b = 100
     for i in range(n):
         players.append(create_player(a, b, i+1))
-        a = a + 150
+        a = a + 250
 
     selected_player = None
     clock = pygame.time.Clock()
 
     running = True
     while running:
-        screen.fill(BG_COLOR)
+        screen.fill(MAIN_COLOR)
         exit_button, minimize_button = draw_header(screen, screen_width, screen_height)
         
         for event in pygame.event.get():
