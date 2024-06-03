@@ -1,14 +1,7 @@
 import random
 from random import randint
 import pygame
-
-# Константы
-PLAYER_SIZE = 150
-PLAYER_COLOR = (90, 90, 90)
-TEXT_COLOR = (255, 255, 255)
-FONT_SIZE = 20
-CPERCENT = 60
-UPERCENT = 30
+from const import PLAYER_SIZE, PLAYER_COLOR, WHITE_COLOR, CPERCENT, UPERCENT, load_all_data, font
 
 # Класс игрока
 class Player:
@@ -16,9 +9,24 @@ class Player:
         self.rect = pygame.Rect(x, y, PLAYER_SIZE, PLAYER_SIZE)
         self.name = name
         self.characteristics = characteristics
+        self.avatar = pygame.image.load("data/avatar.png")  # Загрузка изображения аватара
+        self.avatar = pygame.transform.scale(self.avatar, (PLAYER_SIZE, PLAYER_SIZE))  # Масштабирование до нужного размера
+        self.avatar_pick = pygame.image.load("data/avatar_pick.png")  # Загрузка изображения для состояния наведения
+        self.avatar_pick = pygame.transform.scale(self.avatar_pick, (PLAYER_SIZE, PLAYER_SIZE))  # Масштабирование до нужного размера
+
 
     def draw(self, screen):
-        pygame.draw.rect(screen, PLAYER_COLOR, self.rect)
+        # Проверка, находится ли курсор над аватаром
+        mouse_pos = pygame.mouse.get_pos()
+        if self.rect.collidepoint(mouse_pos):
+            screen.blit(self.avatar_pick, self.rect.topleft)  # Отрисовка изображения при наведении
+        else:
+            screen.blit(self.avatar, self.rect.topleft)  # Отрисовка обычного изображения
+
+        # Отрисовка имени игрока
+        name_surface = font.render(self.name, True, WHITE_COLOR)
+        name_rect = name_surface.get_rect(center=(self.rect.centerx, self.rect.bottom + 10))
+        screen.blit(name_surface, name_rect.topleft)
 
     def draw_characteristics(self, screen, font):
         y_offset = 0
@@ -46,42 +54,70 @@ class Player:
 
         # Drawing the characteristics
         for characteristic in self.characteristics:
-            y_offset += draw_text(characteristic, 1095,  90 + y_offset, 490, font, TEXT_COLOR) + 5
+            y_offset += draw_text(characteristic, 1095, 90 + y_offset, 490, font, WHITE_COLOR) + 5
 
-def load_array(filename):
-    try:
-        with open(filename, 'r', encoding='utf-8') as file:
-            return [line.strip() for line in file]
-    except:
-        print("Error!")
-        return []
-
-def choose_rare(filename1,filename2,filename3):
-    common = load_array(filename1)
-    unusual = load_array(filename2)
-    rare = load_array(filename3)
-
+def choose_rare(common, unusual, rare):
     i = randint(1, 100)
-    if (i <= CPERCENT): value = random.choice(common)
-    elif (i <= CPERCENT+UPERCENT): value = random.choice(unusual)
-    else: value = random.choice(rare)
+    if i <= CPERCENT:
+        if common:
+            value = random.choice(common)
+            common.remove(value)
+        else:
+            value = "No common value available"
+    elif i <= CPERCENT + UPERCENT:
+        if unusual:
+            value = random.choice(unusual)
+            unusual.remove(value)
+        else:
+            value = "No unusual value available"
+    else:
+        if rare:
+            value = random.choice(rare)
+            rare.remove(value)
+        else:
+            value = "No rare value available"
+    return value
 
-    return value if value else "No available value"
+def choose_non_unique(choices):
+    if choices:
+        return random.choice(choices)
+    else:
+        return "No value available"
 
-def create_player(x, y, n):
+def create_player(x, y, n, data):
     profile = []
-    profile.append('КАРТОЧКА ИГРОКА '+str(n))
-    profile.append('Био-характеристика: '+choose_rare("data/sex/common_sex.txt","data/sex/unusual_sex.txt","data/sex/rare_sex.txt")+' / Возраст '+choose_rare("data/age/common_age.txt","data/age/unusual_age.txt","data/age/rare_age.txt"))
-    profile.append('Ориентация: '+choose_rare("data/gender/common_gender.txt","data/gender/unusual_gender.txt","data/gender/rare_gender.txt"))
-    profile.append('Род деятельности: '+choose_rare("data/job/common_job.txt","data/job/unusual_job.txt","data/job/rare_job.txt"))
-    profile.append('Состояние здоровья: '+choose_rare("data/health/common_health.txt","data/health/unusual_health.txt","data/health/rare_health.txt"))
-    profile.append('Хобби: '+choose_rare("data/hobby/common_hobby.txt","data/hobby/unusual_hobby.txt","data/hobby/rare_hobby.txt"))
-    profile.append('Черта характера: '+random.choice(load_array("data/personality.txt")))
-    profile.append('Факт: '+choose_rare("data/fact/common_fact.txt","data/fact/unusual_fact.txt","data/fact/rare_fact.txt"))
-    profile.append('Багаж: '+choose_rare("data/bagage/common_bagage.txt","data/bagage/unusual_bagage.txt","data/bagage/rare_bagage.txt"))
-    profile.append('Карта условия: '+random.choice(load_array("data/condition.txt")))
-    if __name__ == "__main__": print(profile)
-    return Player(x, y, "Player", profile)
+    profile.append('КАРТОЧКА ИГРОКА ' + str(n))
+    profile.append('Био-характеристика: ' + choose_non_unique(data["common_sex"]) + ' / Возраст ' + choose_non_unique(data["common_age"]))
+    profile.append('Ориентация: ' + choose_non_unique(data["common_gender"]))
+    profile.append('Род деятельности: ' + choose_rare(data["common_job"], data["unusual_job"], data["rare_job"]))
+    profile.append('Состояние здоровья: ' + choose_rare(data["common_health"], data["unusual_health"], data["rare_health"]))
+    profile.append('Хобби: ' + choose_rare(data["common_hobby"], data["unusual_hobby"], data["rare_hobby"]))
+    
+    fobia = random.choice(data["fobia"])
+    profile.append('Фобия :'+ fobia)
+    if fobia in data["fobia"]:
+        data["fobia"].remove(fobia)
+
+    # Выбор черты характера
+    characteristic = random.choice(data["personality"])
+    profile.append('Черта характера: ' + characteristic)
+    if characteristic in data["personality"]:
+        data["personality"].remove(characteristic)  # Удаление элемента из списка
+    
+
+    profile.append('Доп. информация: ' + choose_rare(data["common_fact"], data["unusual_fact"], data["rare_fact"]))
+    profile.append('Багаж: ' + choose_rare(data["common_bagage"], data["unusual_bagage"], data["rare_bagage"]))
+    
+    # Выбор карты условия
+    condition = random.choice(data["condition"])
+    profile.append('Карта условия: ' + condition)
+    if condition in data["condition"]:
+        data["condition"].remove(condition)  # Удаление элемента из списка
+    
+    if __name__ == "__main__":
+        print(profile)
+    return Player(x, y, f"Игрок {n}", profile)
 
 if __name__ == "__main__":
-    create_player(100, 100, 1)
+    data = load_all_data()
+    create_player(100, 100, 1, data)

@@ -1,32 +1,12 @@
 import pygame
 import sys
 from player_init import *
+from const import *
 
 # Инициализация Pygame
 pygame.init()
 
-# Константы
-MAIN_COLOR = (212, 207, 201)
-PLAYER_SIZE = 100
-BUTTON_SIZE = 25
-PLAYER_COLOR = (90, 90, 90)
-FONT_SIZE = 35
-HEADER_HEIGHT = 35
-DARK_BLUE = (18, 4, 150)
-BLUE = (90, 110, 195)
-LIGHT_BLUE = (160, 200, 240)
-BLACK_COLOR = (0, 0, 0)
-WHITE_COLOR = (255, 255, 255)
-DARK_GREY = (70, 70, 70)
-LIGHT_GREY = (180, 180, 180)
-
-# Шрифт / Font creator: Nate Halley
-FONT_PATH = "data/fonts/NineByFiveNbp.ttf"
-try:
-    font = pygame.font.Font(FONT_PATH, FONT_SIZE)
-except FileNotFoundError:
-    print(f"Error: Could not find the font file at {FONT_PATH}")
-    font = pygame.font.Font(None, FONT_SIZE)  # Используйте стандартный шрифт Pygame в случае ошибки
+font = init_font()
 
 def draw_button_with_shadow(screen, x, y, w, h, button_color, active_color, text, text_color, font):
     # Определяем положение мыши и нажатие кнопок
@@ -119,13 +99,18 @@ def main():
     # Получаем текущее разрешение экрана после установки полноэкранного режима
     screen_width, screen_height = pygame.display.get_window_size()
 
+    data = load_all_data()
     players = []
-    n = 4
-    a = 100
-    b = 100
+    n=12
+    a, b = 75, 100
+    row_limit = 4  # Количество игроков в одном ряду
     for i in range(n):
-        players.append(create_player(a, b, i+1))
-        a = a + 250
+        players.append(create_player(a, b, i+1, data))
+        if (i + 1) % row_limit == 0:
+            a = 75  # Сбросить координату x для нового ряда
+            b += 250  # Увеличить координату y для нового ряда
+        else:
+            a += 250  # Увеличить координату x для следующего игрока в том же ряду
 
     selected_player = None
     clock = pygame.time.Clock()
