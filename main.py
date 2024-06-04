@@ -99,13 +99,15 @@ def main():
     # Получаем текущее разрешение экрана после установки полноэкранного режима
     screen_width, screen_height = pygame.display.get_window_size()
 
-    data = load_all_data()
+    data = load_array()
     players = []
     n=12
     a, b = 75, 100
     row_limit = 4  # Количество игроков в одном ряду
     for i in range(n):
-        players.append(create_player(a, b, i+1, data))
+        sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition = pick_value(data)
+        player = create_player(a, b, i+1, sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition)
+        players.append(player)
         if (i + 1) % row_limit == 0:
             a = 75  # Сбросить координату x для нового ряда
             b += 250  # Увеличить координату y для нового ряда

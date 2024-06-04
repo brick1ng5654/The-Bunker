@@ -1,7 +1,7 @@
 import random
-from random import randint
 import pygame
-from const import PLAYER_SIZE, PLAYER_COLOR, WHITE_COLOR, CPERCENT, UPERCENT, load_all_data, font
+from random import randint
+from const import CPERCENT, UPERCENT, PLAYER_SIZE, WHITE_COLOR, font
 
 # Класс игрока
 class Player:
@@ -56,68 +56,82 @@ class Player:
         for characteristic in self.characteristics:
             y_offset += draw_text(characteristic, 1095, 90 + y_offset, 490, font, WHITE_COLOR) + 5
 
-def choose_rare(common, unusual, rare):
-    i = randint(1, 100)
-    if i <= CPERCENT:
-        if common:
-            value = random.choice(common)
-            common.remove(value)
-        else:
-            value = "No common value available"
-    elif i <= CPERCENT + UPERCENT:
-        if unusual:
-            value = random.choice(unusual)
-            unusual.remove(value)
-        else:
-            value = "No unusual value available"
+def load_characteristic(filename1, filename2, filename3, multiply):
+    if(multiply == 0): 
+        characteristic = [a for a in open(filename1, 'r', encoding='utf-8')]
+        return characteristic
+    common = [x for x in open(filename1, 'r', encoding='utf-8')]
+    unusual = [y for y in open(filename2, 'r', encoding='utf-8')]
+    rare = [z for z in open(filename3, 'r', encoding='utf-8')]
+    characteristic = [common, unusual, rare]
+    return characteristic
+
+def pick(characteristic, to_delete, multiply):
+    if(multiply == 1):
+        i = randint(1,100)
+        if(i<=CPERCENT): k = 0
+        elif(i<=CPERCENT+UPERCENT): k = 1
+        else: k = 2
+        value = random.choice(characteristic[k])
+        if(to_delete == 1): characteristic[k].remove(value)
     else:
-        if rare:
-            value = random.choice(rare)
-            rare.remove(value)
-        else:
-            value = "No rare value available"
+        value = random.choice(characteristic)
+        if(to_delete == 1): characteristic.remove(value)
     return value
 
-def choose_non_unique(choices):
-    if choices:
-        return random.choice(choices)
-    else:
-        return "No value available"
+def load_array():
+    age_array = load_characteristic("data/age/common_age.txt","data/age/unusual_age.txt","data/age/rare_age.txt",1)
+    bagage_array = load_characteristic("data/bagage/common_bagage.txt","data/bagage/unusual_bagage.txt","data/bagage/rare_bagage.txt",1)
+    fact_array = load_characteristic("data/fact/common_fact.txt","data/fact/unusual_fact.txt","data/fact/rare_fact.txt",1)
+    gender_array = load_characteristic("data/gender/common_gender.txt","data/gender/unusual_gender.txt","data/gender/rare_gender.txt",1)
+    health_array = load_characteristic("data/health/common_health.txt","data/health/unusual_health.txt","data/health/rare_health.txt",1)
+    hobby_array = load_characteristic("data/hobby/common_hobby.txt","data/hobby/unusual_hobby.txt","data/hobby/rare_hobby.txt",1)
+    job_array = load_characteristic("data/job/common_job.txt","data/job/unusual_job.txt","data/job/rare_job.txt",1)
+    sex_array = load_characteristic("data/sex/common_sex.txt","data/sex/unusual_sex.txt","data/sex/rare_sex.txt",1)
+    action_array = load_characteristic("data/action.txt","","",0)
+    condition_array = load_characteristic("data/condition.txt","","",0)
+    fobia_array = load_characteristic("data/fobia.txt","","",0)
+    knowledge_array = load_characteristic("data/knowledge.txt","","",0)
+    personality_array = load_characteristic("data/personality.txt","","",0)
+    return (age_array, bagage_array, fact_array, gender_array, health_array, hobby_array, job_array, sex_array, action_array, condition_array, fobia_array, knowledge_array, personality_array)
 
-def create_player(x, y, n, data):
+def pick_value(data):
+    age, bagage, fact, gender, health, hobby, job, sex, action, condition, fobia, knowledge, personality = data
+    age = pick(age, 1, 1)
+    bagage = pick(bagage, 1, 1)
+    fact = pick(fact, 1, 1)
+    gender = pick(gender, 0, 1)
+    health = pick(health, 0, 1)
+    hobby = pick(hobby, 1, 1)
+    job = pick(job, 1, 1)
+    sex = pick(sex, 0, 1)
+    action = pick(action, 1, 0)
+    condition = pick(condition, 1, 0)
+    fobia = pick(fobia, 1, 0)
+    knowledge = pick(knowledge, 1, 0)
+    personality = pick(personality, 1, 0)
+    return sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition
+    
+def create_player(x, y, n, sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition):
     profile = []
     profile.append('КАРТОЧКА ИГРОКА ' + str(n))
-    profile.append('Био-характеристика: ' + choose_non_unique(data["common_sex"]) + ' / Возраст ' + choose_non_unique(data["common_age"]))
-    profile.append('Ориентация: ' + choose_non_unique(data["common_gender"]))
-    profile.append('Род деятельности: ' + choose_rare(data["common_job"], data["unusual_job"], data["rare_job"]))
-    profile.append('Состояние здоровья: ' + choose_rare(data["common_health"], data["unusual_health"], data["rare_health"]))
-    profile.append('Хобби: ' + choose_rare(data["common_hobby"], data["unusual_hobby"], data["rare_hobby"]))
-    
-    fobia = random.choice(data["fobia"])
-    profile.append('Фобия :'+ fobia)
-    if fobia in data["fobia"]:
-        data["fobia"].remove(fobia)
-
-    # Выбор черты характера
-    characteristic = random.choice(data["personality"])
-    profile.append('Черта характера: ' + characteristic)
-    if characteristic in data["personality"]:
-        data["personality"].remove(characteristic)  # Удаление элемента из списка
-    
-
-    profile.append('Доп. информация: ' + choose_rare(data["common_fact"], data["unusual_fact"], data["rare_fact"]))
-    profile.append('Багаж: ' + choose_rare(data["common_bagage"], data["unusual_bagage"], data["rare_bagage"]))
-    
-    # Выбор карты условия
-    condition = random.choice(data["condition"])
-    profile.append('Карта условия: ' + condition)
-    if condition in data["condition"]:
-        data["condition"].remove(condition)  # Удаление элемента из списка
-    
+    profile.append('Био-характеристика: '+sex+' / Возраст '+age)
+    profile.append('Ориентация: '+gender)
+    profile.append('Род деятельности: '+job)
+    profile.append('Состояние здоровья: '+health)
+    profile.append('Фобия: '+fobia)
+    profile.append('Черта характера: '+personality)
+    profile.append('Хобби: '+hobby)
+    profile.append('Знание: '+knowledge)
+    profile.append('Доп. информация: '+fact)
+    profile.append('Багаж: '+bagage)
+    profile.append('Карта действия: '+action)
+    profile.append('Карта условия: '+condition)
     if __name__ == "__main__":
         print(profile)
     return Player(x, y, f"Игрок {n}", profile)
 
-if __name__ == "__main__":
-    data = load_all_data()
-    create_player(100, 100, 1, data)
+if (__name__ == "__main__"):
+    data = load_array()
+    sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition = pick_value(data)
+    create_player(100, 100, 1, sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition)
