@@ -3,7 +3,6 @@ import pygame
 from random import randint
 from const import CPERCENT, UPERCENT, PLAYER_SIZE, WHITE_COLOR, font
 
-# Класс игрока
 class Player:
     def __init__(self, x, y, name, characteristics):
         self.rect = pygame.Rect(x, y, PLAYER_SIZE, PLAYER_SIZE)
@@ -14,16 +13,13 @@ class Player:
         self.avatar_pick = pygame.image.load("data/avatar_pick.png")  # Загрузка изображения для состояния наведения
         self.avatar_pick = pygame.transform.scale(self.avatar_pick, (PLAYER_SIZE, PLAYER_SIZE))  # Масштабирование до нужного размера
 
-
     def draw(self, screen):
-        # Проверка, находится ли курсор над аватаром
         mouse_pos = pygame.mouse.get_pos()
         if self.rect.collidepoint(mouse_pos):
-            screen.blit(self.avatar_pick, self.rect.topleft)  # Отрисовка изображения при наведении
+            screen.blit(self.avatar_pick, self.rect.topleft)    # Отрисовка изображения при наведении
         else:
-            screen.blit(self.avatar, self.rect.topleft)  # Отрисовка обычного изображения
+            screen.blit(self.avatar, self.rect.topleft)         # Отрисовка обычного изображения
 
-        # Отрисовка имени игрока
         name_surface = font.render(self.name, True, WHITE_COLOR)
         name_rect = name_surface.get_rect(center=(self.rect.centerx, self.rect.bottom + 10))
         screen.blit(name_surface, name_rect.topleft)
@@ -50,9 +46,8 @@ class Player:
                 screen.blit(text_surface, (x, y))
                 y += font.get_linesize()
 
-            return len(lines) * font.get_linesize()  # Возвращает количество пикселей, занятых текстом
+            return len(lines) * font.get_linesize()
 
-        # Drawing the characteristics
         for characteristic in self.characteristics:
             y_offset += draw_text(characteristic, 1095, 90 + y_offset, 490, font, WHITE_COLOR) + 5
 
