@@ -98,9 +98,9 @@ def load_characteristic(filename1, filename2, filename3, multiply):
     if(multiply == 0): 
         characteristic = [a for a in open(filename1, 'r', encoding='utf-8')]
         return characteristic
-    common = [x for x in open(filename1, 'r', encoding='utf-8')]
-    unusual = [y for y in open(filename2, 'r', encoding='utf-8')]
-    rare = [z for z in open(filename3, 'r', encoding='utf-8')]
+    common = [x.strip() for x in open(filename1, 'r', encoding='utf-8')]
+    unusual = [y.strip() for y in open(filename2, 'r', encoding='utf-8')]
+    rare = [z.strip() for z in open(filename3, 'r', encoding='utf-8')]
     characteristic = [common, unusual, rare]
     return characteristic
 

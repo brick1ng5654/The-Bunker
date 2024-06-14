@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Players</title>
+</head>
+<body>
+    <h1>Players</h1>
+    <ul>
+    {% for player_id, player in players.items() %}
+        <li><a href="/player/{{ player_id }}">Player {{ player_id }}</a></li>
+    {% endfor %}
+    </ul>
+</body>
+</html>
