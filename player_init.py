@@ -1,24 +1,25 @@
 import random
 import pygame
 from random import randint
-from const import CPERCENT, UPERCENT, PLAYER_SIZE, WHITE_COLOR, font
+from const import CPERCENT, UPERCENT, PLAYER_SIZE, WHITE_COLOR, font, LIGHT_GREY, BLACK_COLOR
 
 class Player:
     def __init__(self, x, y, name, characteristics):
         self.rect = pygame.Rect(x, y, PLAYER_SIZE, PLAYER_SIZE)
         self.name = name
         self.characteristics = characteristics
-        self.avatar = pygame.image.load("data/avatar.png")  # Загрузка изображения аватара
-        self.avatar = pygame.transform.scale(self.avatar, (PLAYER_SIZE, PLAYER_SIZE))  # Масштабирование до нужного размера
-        self.avatar_pick = pygame.image.load("data/avatar_pick.png")  # Загрузка изображения для состояния наведения
-        self.avatar_pick = pygame.transform.scale(self.avatar_pick, (PLAYER_SIZE, PLAYER_SIZE))  # Масштабирование до нужного размера
+        self.characteristics_visible = [False] * len(characteristics)
+        self.avatar = pygame.image.load("data/avatar.png")
+        self.avatar = pygame.transform.scale(self.avatar, (PLAYER_SIZE, PLAYER_SIZE))
+        self.avatar_pick = pygame.image.load("data/avatar_pick.png")
+        self.avatar_pick = pygame.transform.scale(self.avatar_pick, (PLAYER_SIZE, PLAYER_SIZE))
 
-    def draw(self, screen):
+    def draw(self, screen, font):
         mouse_pos = pygame.mouse.get_pos()
         if self.rect.collidepoint(mouse_pos):
-            screen.blit(self.avatar_pick, self.rect.topleft)    # Отрисовка изображения при наведении
+            screen.blit(self.avatar_pick, self.rect.topleft)
         else:
-            screen.blit(self.avatar, self.rect.topleft)         # Отрисовка обычного изображения
+            screen.blit(self.avatar, self.rect.topleft)
 
         name_surface = font.render(self.name, True, WHITE_COLOR)
         name_rect = name_surface.get_rect(center=(self.rect.centerx, self.rect.bottom + 10))
@@ -41,16 +42,58 @@ class Player:
                     current_line = word + " "
             lines.append(current_line)
 
+            text_height = 0
             for line in lines:
                 text_surface = font.render(line, True, color)
-                screen.blit(text_surface, (x, y))
-                y += font.get_linesize()
+                screen.blit(text_surface, (x, y + text_height))
+                text_height += font.get_linesize()
 
-            return len(lines) * font.get_linesize()
+            return text_height
 
-        for characteristic in self.characteristics:
-            y_offset += draw_text(characteristic, 1095, 90 + y_offset, 490, font, WHITE_COLOR) + 5
+        for i, characteristic in enumerate(self.characteristics):
+            btn_rect = pygame.Rect(1095, 90 + y_offset, 30, 30)
+            pygame.draw.rect(screen, LIGHT_GREY, btn_rect)
+            pygame.draw.rect(screen, BLACK_COLOR, btn_rect, 2)
 
+            if self.characteristics_visible[i]:
+                text_height = draw_text(characteristic, 1140, 90 + y_offset, 445, font, WHITE_COLOR) + 5
+                y_offset += text_height
+                btn_text = "o"
+            else:
+                btn_text = "-"
+
+            btn_surface = font.render(btn_text, True, BLACK_COLOR)
+            btn_text_rect = btn_surface.get_rect(center=btn_rect.center)
+            screen.blit(btn_surface, btn_text_rect)
+
+            y_offset += 35
+
+    def handle_event(self, event, font):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = event.pos
+            y_offset = 0
+            for i in range(len(self.characteristics)):
+                btn_rect = pygame.Rect(1095, 90 + y_offset, 30, 30)
+                if btn_rect.collidepoint(mouse_pos):
+                    self.characteristics_visible[i] = not self.characteristics_visible[i]
+                if self.characteristics_visible[i]:
+                    words = self.characteristics[i].split()
+                    lines = []
+                    current_line = ""
+
+                    for word in words:
+                        test_line = current_line + word + " "
+                        if font.size(test_line)[0] <= 445:
+                            current_line = test_line
+                        else:
+                            lines.append(current_line)
+                            current_line = word + " "
+                    lines.append(current_line)
+
+                    text_height = len(lines) * font.get_linesize()
+                    y_offset += text_height + 5
+                y_offset += 35
+                
 def load_characteristic(filename1, filename2, filename3, multiply):
     if(multiply == 0): 
         characteristic = [a for a in open(filename1, 'r', encoding='utf-8')]

@@ -184,12 +184,12 @@ def main():
     font = pygame.font.Font(FONT_PATH, 30)
 
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    screen_width, screen_height = pygame.display.get_window_size()                      # Итоговое текущее разрешение окна
+    screen_width, screen_height = pygame.display.get_window_size()  # Итоговое текущее разрешение окна
     pygame.display.set_caption("The Bunker")
-    pygame.display.set_icon(pygame.image.load("data/radiation.png"))                    # Загрузка иконки
-    cursor_image = pygame.image.load("data/cursor.png").convert_alpha()                 # Загрузка кастомного курсора
-    cursor_image = pygame.transform.scale(cursor_image, (BUTTON_SIZE, BUTTON_SIZE + 5)) # Масштабирование курсора
-    pygame.mouse.set_visible(False)                                                     # Сокрытие системного курсора
+    pygame.display.set_icon(pygame.image.load("data/radiation.png"))  # Загрузка иконки
+    cursor_image = pygame.image.load("data/cursor.png").convert_alpha()  # Загрузка кастомного курсора
+    cursor_image = pygame.transform.scale(cursor_image, (BUTTON_SIZE, BUTTON_SIZE + 5))  # Масштабирование курсора
+    pygame.mouse.set_visible(False)  # Сокрытие системного курсора
 
     clock = pygame.time.Clock()
     show_help = False
@@ -210,90 +210,104 @@ def main():
         exit_button, minimize_button = draw_header(screen, screen_width, screen_height)
         draw_lower(screen, screen_width, screen_height)
 
-        if not players: # Если игра ещё не началась
+        if not players:  # Если игра ещё не началась
             new_game_button, help_button, exit_option_button = draw_option(screen, screen_width, screen_height, LIGHT_GREY, changed_color(LIGHT_GREY, 15, 0), BLACK_COLOR)
 
-        if show_help:   # Если нажали кнопку помощи
+        if show_help:  # Если нажали кнопку помощи
             close_button = draw_help_window(screen, screen_width, screen_height, help_text)
-        if show_input:  # Если нажали кнопку "Новая игра
+        if show_input:  # Если нажали кнопку "Новая игра"
             input_rect, close_input_button = draw_input_window(screen, screen_width, screen_height, input_text, input_active, error_message)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:          # Если был клик мышки, то...
-                if show_help:                                   # Проверяем, если окно помощи открыто
-                    if close_button.collidepoint(event.pos):    # Было ли нажатие кнопки закрытия окна помощи
-                        show_help = False                       # Закрываем окно помощи
-                elif show_input:                                # Проверяем, если окно ввода открыто
+            elif event.type == pygame.MOUSEBUTTONDOWN:  # Если был клик мышки, то...
+                if show_help:  # Проверяем, если окно помощи открыто
+                    if close_button.collidepoint(event.pos):  # Было ли нажатие кнопки закрытия окна помощи
+                        show_help = False  # Закрываем окно помощи
+                elif show_input:  # Проверяем, если окно ввода открыто
                     if close_input_button.collidepoint(event.pos):
-                        show_input = False                      # Закрываем окно ввода
+                        show_input = False  # Закрываем окно ввода
                         input_active = False
                         error_message = ""
                     elif input_rect.collidepoint(event.pos):
                         input_active = True
                     else:
                         input_active = False
-                elif exit_button.collidepoint(event.pos):       # Кнопка выхода (Доступна в любой момент)
+                elif exit_button.collidepoint(event.pos):  # Кнопка выхода (Доступна в любой момент)
                     pygame.quit()
                     sys.exit()
-                elif minimize_button.collidepoint(event.pos):   # Кнопка сворачивания (Доступна в любой момент)
+                elif minimize_button.collidepoint(event.pos):  # Кнопка сворачивания (Доступна в любой момент)
                     pygame.display.iconify()
-                elif not players:                               # Если игроки еще не созданы, проверяем кнопки меню
-                    if help_button and help_button.collidepoint(event.pos):           # Кнопка помощи
+                elif not players:  # Если игроки еще не созданы, проверяем кнопки меню
+                    if help_button and help_button.collidepoint(event.pos):  # Кнопка помощи
                         show_help = True
-                    elif new_game_button and new_game_button.collidepoint(event.pos):   # Кнопка новой игры
+                    elif new_game_button and new_game_button.collidepoint(event.pos):  # Кнопка новой игры
                         show_input = True
                         input_active = True
                     elif exit_option_button and exit_option_button.collidepoint(event.pos):
                         running = False
-                else:                                           # Если игроки созданы
+                else:  # Если игроки созданы
                     for player in players:
-                        if player.rect.collidepoint(event.pos): # Нажатие на игрока - выделение игрока
+                        if player.rect.collidepoint(event.pos):  # Нажатие на игрока - выделение игрока
                             selected_player = player
+                        player.handle_event(event, font)  # Обработка событий для отображения характеристик
 
-            elif event.type == pygame.KEYDOWN and show_input:   # Если открыто окно ввода и нажимается кнопка клавиатуры:
+            elif event.type == pygame.KEYDOWN and show_input:  # Если открыто окно ввода и нажимается кнопка клавиатуры:
                 if event.key == pygame.K_RETURN:
                     try:
                         n = int(input_text)
                         if 1 <= n <= 12:
-                            show_input = False      # Скрыть окно
-                            input_active = False    # Очищаем всё
+                            show_input = False  # Скрыть окно
+                            input_active = False  # Очищаем всё
                             input_text = ""
                             error_message = ""
 
-                            data = load_array()     # Загружаем данные (характеристики)
+                            data = load_array()  # Загружаем данные (характеристики)
                             a, b = 75, 100
-                            row_limit = 4           # Количество игроков в одном ряду
+                            row_limit = 4  # Количество игроков в одном ряду
                             for i in range(n):
                                 sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition = pick_value(data)
-                                player = create_player(a, b, i + 1, sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition)
-                                players.append(player)
-                                if (i + 1) % row_limit == 0:
-                                    a = 75  # Сбросить координату x для нового ряда
-                                    b += 250  # Увеличить координату y для нового ряда
+                                characteristics = [
+                                    f"Пол: {sex}",
+                                    f"Возраст: {age}",
+                                    f"Ориентация: {gender}",
+                                    f"Профессия: {job}",
+                                    f"Состояние здоровья: {health}",
+                                    f"Фобии: {fobia}",
+                                    f"Черты характера: {personality}",
+                                    f"Хобби: {hobby}",
+                                    f"Знания: {knowledge}",
+                                    f"Факты: {fact}",
+                                    f"Багаж: {bagage}",
+                                    f"Действие: {action}",
+                                    f"Состояние: {condition}"
+                                ]
+                                players.append(Player(a, b, f"Игрок {i + 1}", characteristics))
+                                if (i + 1) % row_limit == 0:  # Если количество игроков равно лимиту ряда, увеличиваем позицию x
+                                    b += 250  # Увеличение позиции y
+                                    a = 75
                                 else:
-                                    a += 250  # Увеличить координату x для следующего игрока в том же ряду
+                                    a += 225  # Увеличение позиции x для следующего игрока в том же ряду
                         else:
-                            error_message = "Введите число от 1 до 12"  # Введено число не удовлетворяющее условию
+                            error_message = "Введите число от 1 до 12!"
                     except ValueError:
-                        error_message = "Введите допустимое число"      # Введён текст
-                elif event.key == pygame.K_BACKSPACE:   # Удаление символа
+                        error_message = "Неверный ввод! Введите число!"
+                elif event.key == pygame.K_BACKSPACE:
                     input_text = input_text[:-1]
-                elif len(input_text) < 10:              # Ограничение по символам
+                else:
                     input_text += event.unicode
 
-        mouse_x, mouse_y = pygame.mouse.get_pos()  # Определение положения курсора
         if players:
             for player in players:
-                player.draw(screen)
+                player.draw(screen, font)
+            if selected_player:
+                selected_player.draw_characteristics(screen, font)
 
-        if selected_player:
-            selected_player.draw_characteristics(screen, font)
-
-        screen.blit(cursor_image, (mouse_x, mouse_y))  # Отрисовка курсора
-        pygame.display.flip()  # Обновление экрана
-        clock.tick(60)  # Частота экрана
+        pygame.draw.circle(screen, WHITE_COLOR, pygame.mouse.get_pos(), 5)  # Кастомный курсор
+        screen.blit(cursor_image, (pygame.mouse.get_pos()[0] - 5, pygame.mouse.get_pos()[1] - 5))
+        pygame.display.update()
+        clock.tick(60)
 
     pygame.quit()
     sys.exit()
