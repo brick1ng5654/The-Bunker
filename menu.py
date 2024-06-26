@@ -1,8 +1,18 @@
 import pygame
 import sys
+from sup import *
 import datetime
-from player_init import *
-from const import *
+from bunker import create_bunker
+from player import new_game
+from random import randint
+import random
+import subprocess
+import os
+
+font = init_font()
+
+def run_server():
+    subprocess.Popen(["python", "server.py"])
 
 def changed_color(color, amount, action):
     if(action): return tuple(min(value + amount, 255) for value in color)   # "Увеличение" цвета (к белому)
@@ -49,7 +59,7 @@ def draw_gradient_rect(screen, rect, start_color, end_color):
         pygame.draw.line(screen, color, (x + i, y), (x + i, y + h))
 
 def draw_header(screen, width, height):
-    draw_gradient_rect(screen, (0, 0, width, HEADER_HEIGHT), changed_color(BLUE, 75, 0), changed_color(BLUE, 70, 1))   # Рисуем градиентную полосу заголовка
+    draw_gradient_rect(screen, (0, 0, width, 35), changed_color(BLUE, 75, 0), changed_color(BLUE, 70, 1))   # Рисуем градиентную полосу заголовка
 
     # Загрузка изображения радиации
     radiation_image = pygame.image.load("data/radiation.png").convert_alpha()
@@ -84,14 +94,14 @@ def draw_lower(screen, width, height):
     current_time = datetime.datetime.now().strftime("%H:%M")    # Определение времени
     current_date = datetime.datetime.now().strftime("%d-%m-%Y") # Определение даты
 
-    title_surface = font.render("The Bunker 1.01 - Ready (Registred)", True, BLACK_COLOR)
+    title_surface = font.render("The Bunker 1.02 - Ready (Registred)", True, BLACK_COLOR)
     screen.blit(title_surface, (20, height - 43))               # Отрисовка текста имени
     
     title_surface = font.render(current_date, True, BLACK_COLOR)
     screen.blit(title_surface, (width-234, height - 43))        # Отрисовка даты
 
     title_surface = font.render(current_time, True, BLACK_COLOR)
-    screen.blit(title_surface, (width-74, height - 43))         # Отрисовка времени
+    screen.blit(title_surface, (width-73, height - 43))         # Отрисовка времени
 
 def draw_option(screen, width, height, default_color, active_color, font_color):
     font = pygame.font.Font(FONT_PATH, 50)
@@ -178,123 +188,135 @@ def draw_input_window(screen, width, height, input_text, input_active, error_mes
 
     return input_rect, close_button
 
+def display_bunker(screen, bunker, screen_width):
+    y_offset = 50
+    #max_width = screen_width - 100  # Define maximum width for text wrapping
+    max_width = 720
+    for line in bunker:
+        words = line.split()
+        current_line = ""
+        for word in words:
+            if font.size(current_line + word)[0] < max_width:
+                current_line += word + " "
+            else:
+                text_surface = font.render(current_line, True, BLACK_COLOR)
+                screen.blit(text_surface, (50, y_offset))
+                y_offset += 40
+                current_line = word + " "
+        text_surface = font.render(current_line, True, BLACK_COLOR)
+        screen.blit(text_surface, (50, y_offset))
+        y_offset += 40
+
+def clear_players_data():
+    for i in range(1, 13):
+        try:
+            os.remove(f'data/players/player_{i}.txt')
+        except:
+            break
+
 def main():
-    pygame.init()  # Инициализация Pygame
-    global font
-    font = pygame.font.Font(FONT_PATH, 30)
+    pygame.init()
 
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    screen_width, screen_height = pygame.display.get_window_size()                      # Итоговое текущее разрешение окна
+    screen_width, screen_height = pygame.display.get_window_size()
     pygame.display.set_caption("The Bunker")
-    pygame.display.set_icon(pygame.image.load("data/radiation.png"))                    # Загрузка иконки
-    cursor_image = pygame.image.load("data/cursor.png").convert_alpha()                 # Загрузка кастомного курсора
-    cursor_image = pygame.transform.scale(cursor_image, (BUTTON_SIZE, BUTTON_SIZE + 5)) # Масштабирование курсора
-    pygame.mouse.set_visible(False)                                                     # Сокрытие системного курсора
-
+    pygame.display.set_icon(pygame.image.load("data/radiation.png"))
+    cursor_image = pygame.image.load("data/cursor.png").convert_alpha()
+    cursor_image = pygame.transform.scale(cursor_image, (BUTTON_SIZE, BUTTON_SIZE + 5))
+    pygame.mouse.set_visible(False)
     clock = pygame.time.Clock()
+
     show_help = False
     show_input = False
     input_text = ""
     input_active = False
     error_message = ""
-    players = []
+    game_begin = 0
     n = 0
-    selected_player = None
 
-    with open("data/help.txt", 'r', encoding='utf-8') as file:  # Загрузка информации об игре
+    clear_players_data()
+    with open("data/help.txt", 'r', encoding='utf-8') as file:
         help_text = file.read()
 
+    bunker = []
     running = True
     while running:
-        screen.fill(MAIN_COLOR)
-        exit_button, minimize_button = draw_header(screen, screen_width, screen_height)
-        draw_lower(screen, screen_width, screen_height)
-
-        if not players: # Если игра ещё не началась
-            new_game_button, help_button, exit_option_button = draw_option(screen, screen_width, screen_height, LIGHT_GREY, changed_color(LIGHT_GREY, 15, 0), BLACK_COLOR)
-
-        if show_help:   # Если нажали кнопку помощи
-            close_button = draw_help_window(screen, screen_width, screen_height, help_text)
-        if show_input:  # Если нажали кнопку "Новая игра
-            input_rect, close_input_button = draw_input_window(screen, screen_width, screen_height, input_text, input_active, error_message)
-
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:          # Если был клик мышки, то...
-                if show_help:                                   # Проверяем, если окно помощи открыто
-                    if close_button.collidepoint(event.pos):    # Было ли нажатие кнопки закрытия окна помощи
-                        show_help = False                       # Закрываем окно помощи
-                elif show_input:                                # Проверяем, если окно ввода открыто
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if show_help:
+                    if close_button.collidepoint(event.pos):
+                        show_help = False
+                elif show_input:
                     if close_input_button.collidepoint(event.pos):
-                        show_input = False                      # Закрываем окно ввода
+                        show_input = False
                         input_active = False
                         error_message = ""
                     elif input_rect.collidepoint(event.pos):
                         input_active = True
                     else:
                         input_active = False
-                elif exit_button.collidepoint(event.pos):       # Кнопка выхода (Доступна в любой момент)
+                elif exit_button.collidepoint(event.pos):
+                    clear_players_data()
                     pygame.quit()
                     sys.exit()
-                elif minimize_button.collidepoint(event.pos):   # Кнопка сворачивания (Доступна в любой момент)
+                elif minimize_button.collidepoint(event.pos):
                     pygame.display.iconify()
-                elif not players:                               # Если игроки еще не созданы, проверяем кнопки меню
-                    if help_button and help_button.collidepoint(event.pos):           # Кнопка помощи
+                elif (game_begin == 0):
+                    if help_button and help_button.collidepoint(event.pos):
                         show_help = True
-                    elif new_game_button and new_game_button.collidepoint(event.pos):   # Кнопка новой игры
+                    elif new_game_button and new_game_button.collidepoint(event.pos):
                         show_input = True
                         input_active = True
                     elif exit_option_button and exit_option_button.collidepoint(event.pos):
                         running = False
-                else:                                           # Если игроки созданы
-                    for player in players:
-                        if player.rect.collidepoint(event.pos): # Нажатие на игрока - выделение игрока
-                            selected_player = player
 
-            elif event.type == pygame.KEYDOWN and show_input:   # Если открыто окно ввода и нажимается кнопка клавиатуры:
+            elif event.type == pygame.KEYDOWN and show_input:
                 if event.key == pygame.K_RETURN:
                     try:
                         n = int(input_text)
                         if 1 <= n <= 12:
-                            show_input = False      # Скрыть окно
-                            input_active = False    # Очищаем всё
+                            game_begin = 1
+                            show_input = False
+                            input_active = False
                             input_text = ""
                             error_message = ""
-
-                            data = load_array()     # Загружаем данные (характеристики)
-                            a, b = 75, 100
-                            row_limit = 4           # Количество игроков в одном ряду
-                            for i in range(n):
-                                sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition = pick_value(data)
-                                player = create_player(a, b, i + 1, sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition)
-                                players.append(player)
-                                if (i + 1) % row_limit == 0:
-                                    a = 75  # Сбросить координату x для нового ряда
-                                    b += 250  # Увеличить координату y для нового ряда
-                                else:
-                                    a += 250  # Увеличить координату x для следующего игрока в том же ряду
+                            bunker, image = create_bunker(n)
+                            new_game(n)
+                            run_server()
+                            
                         else:
-                            error_message = "Введите число от 1 до 12"  # Введено число не удовлетворяющее условию
+                            error_message = "Введите число от 1 до 12!"
                     except ValueError:
-                        error_message = "Введите допустимое число"      # Введён текст
-                elif event.key == pygame.K_BACKSPACE:   # Удаление символа
+                        error_message = "Неверный ввод! Введите число!"
+                elif event.key == pygame.K_BACKSPACE:
                     input_text = input_text[:-1]
-                elif len(input_text) < 10:              # Ограничение по символам
+                else:
                     input_text += event.unicode
 
-        mouse_x, mouse_y = pygame.mouse.get_pos()  # Определение положения курсора
-        if players:
-            for player in players:
-                player.draw(screen)
+            elif event.type == pygame.QUIT:
+                running = False
 
-        if selected_player:
-            selected_player.draw_characteristics(screen, font)
+        screen.fill(MAIN_COLOR)
+        exit_button, minimize_button = draw_header(screen, screen_width, screen_height)
+        draw_lower(screen, screen_width, screen_height)
 
-        screen.blit(cursor_image, (mouse_x, mouse_y))  # Отрисовка курсора
-        pygame.display.flip()  # Обновление экрана
-        clock.tick(60)  # Частота экрана
+        if (game_begin == 0):
+            new_game_button, help_button, exit_option_button = draw_option(screen, screen_width, screen_height, LIGHT_GREY, changed_color(LIGHT_GREY, 15, 0), BLACK_COLOR)
 
+        if show_help:
+            close_button = draw_help_window(screen, screen_width, screen_height, help_text)
+        if show_input:
+            input_rect, close_input_button = draw_input_window(screen, screen_width, screen_height, input_text, input_active, error_message)
+
+        if game_begin and bunker:
+            display_bunker(screen, bunker, screen_width)
+
+        pygame.draw.circle(screen, WHITE_COLOR, pygame.mouse.get_pos(), 1)
+        screen.blit(cursor_image, (pygame.mouse.get_pos()[0] - 5, pygame.mouse.get_pos()[1] - 5))
+        pygame.display.flip()
+        clock.tick(60)
+
+    clear_players_data()
     pygame.quit()
     sys.exit()
 

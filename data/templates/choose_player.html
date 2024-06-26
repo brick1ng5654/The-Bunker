@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Player</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #ffcc00;
+            margin-bottom: 20px;
+        }
+
+        .player-number-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .player-number-form select {
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .player-number-form button {
+            background-color: #ffcc00;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+
+        .player-number-form button:hover {
+            background-color: #ffdd00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Choose Your Player Number</h1>
+        <form class="player-number-form" method="POST">
+            <select name="player_number" required>
+                <option value="" disabled selected>Select your player number</option>
+                {% for number in player_numbers %}
+                    <option value="{{ number }}">{{ number }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

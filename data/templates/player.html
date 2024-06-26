@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ player.name }}</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #333;
+            width: 100%;
+            padding: 10px 0;
+            text-align: center;
+            border-bottom: 3px solid #ffcc00;
+        }
+
+        .header img {
+            max-width: 150px;
+            height: auto;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffcc00;
+            padding: 20px 0;
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: left;
+        }
+
+        li {
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+
+        .scrolling-buttons {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 10px 0;
+            background-color: #333;
+            border-top: 3px solid #ffcc00;
+            position: fixed;
+            bottom: 0px;
+            width: 100%;
+        }
+
+        .scrolling-buttons a {
+            display: inline-block;
+            background-color: #555;
+            color: #ffcc00;
+            border: 2px solid #ffcc00;
+            border-radius: 5px;
+            margin: 0 5px;
+            padding: 10px 20px;
+            text-decoration: none;
+            font-size: 1.2em;
+        }
+
+        .scrolling-buttons a:hover {
+            background-color: #777;
+        }
+
+        .hidden-characteristic {
+            display: none;
+        }
+
+        .show-button {
+            background-color: #ffcc00;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .show-button:hover {
+            background-color: #ffdd00;
+        }
+
+        .exclude-button {
+            display: inline-block;
+            background-color: #555;
+            color: #ffcc00;
+            border: 2px solid #ffcc00;
+            border-radius: 5px;
+            margin: 0 5px;
+            padding: 10px 20px;
+            text-decoration: none;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+
+        .exclude-button:hover {
+            background-color: #777;
+        }
+
+        .excluded {
+            opacity: 0.25;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/"><img src="{{ url_for('static', filename='images/sitelogo.png') }}" alt="Site Logo"></a>
+    </div>
+    <div class="container">
+        <h1>Игрок №{{ player.number }}</h1>
+        <button class="exclude-button" data-player-number="{{ player.number }}">Исключить</button>
+        <ul>
+            {% for index in range(player.num_characteristics) %}
+                <li>
+                    <button class="show-button" onclick="toggleCharacteristic('{{ index }}')">Show</button>
+                    <span id="characteristic-{{ index }}" class="hidden-characteristic">{{ player.characteristics[index] }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="scrolling-buttons">
+        {% for player in players %}
+            <a href="{{ url_for('player', name=player.name) }}" class="player-link" data-player-number="{{ player.number }}">{{ loop.index }}</a>
+        {% endfor %}
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const playerName = "{{ player.name }}";
+
+            // Загрузка состояния раскрытых характеристик из sessionStorage
+            var playerCharacteristics = sessionStorage.getItem(`player-${playerName}`);
+            if (playerCharacteristics) {
+                playerCharacteristics = JSON.parse(playerCharacteristics);
+                for (var index in playerCharacteristics) {
+                    var characteristic = document.getElementById(`characteristic-${index}`);
+                    if (characteristic) {
+                        characteristic.classList.toggle('hidden-characteristic', !playerCharacteristics[index]);
+                    }
+                }
+            }
+
+            var excludeButtons = document.querySelectorAll('.exclude-button');
+            excludeButtons.forEach(function(button) {
+                var playerNumber = button.dataset.playerNumber;
+                // Установить начальное состояние кнопки на основе localStorage
+                var isExcluded = localStorage.getItem('excluded-' + playerNumber);
+                if (isExcluded === 'true') {
+                    button.textContent = 'Вернуть';
+                    togglePlayerLinkState(playerNumber, true);
+                }
+
+                button.addEventListener('click', function() {
+                    toggleExcludeButton(button);
+                });
+            });
+
+            // Функция для переключения состояния кнопки "Исключить"
+            function toggleExcludeButton(button) {
+                var playerNumber = button.dataset.playerNumber;
+                var isExcluded = localStorage.getItem('excluded-' + playerNumber) === 'true';
+
+                if (isExcluded) {
+                    button.textContent = 'Исключить';
+                    localStorage.setItem('excluded-' + playerNumber, 'false');
+                    togglePlayerLinkState(playerNumber, false);
+                } else {
+                    button.textContent = 'Вернуть';
+                    localStorage.setItem('excluded-' + playerNumber, 'true');
+                    togglePlayerLinkState(playerNumber, true);
+                }
+            }
+
+            // Функция для изменения состояния ссылки игрока
+            function togglePlayerLinkState(playerNumber, isExcluded) {
+                var playerLinks = document.querySelectorAll('.scrolling-buttons a[data-player-number="' + playerNumber + '"]');
+                playerLinks.forEach(function(playerLink) {
+                    if (isExcluded) {
+                        playerLink.classList.add('excluded');
+                    } else {
+                        playerLink.classList.remove('excluded');
+                    }
+                });
+            }
+
+            // Применяем состояние скрытых игроков ко всем ссылкам в ленте
+            var playerLinks = document.querySelectorAll('.scrolling-buttons a');
+            playerLinks.forEach(function(link) {
+                var playerNumber = link.dataset.playerNumber;
+                var isExcluded = localStorage.getItem('excluded-' + playerNumber) === 'true';
+                if (isExcluded) {
+                    link.classList.add('excluded');
+                }
+            });
+
+            // Функция для переключения видимости характеристики
+            window.toggleCharacteristic = function(index) {
+                const characteristic = document.getElementById(`characteristic-${index}`);
+                if (characteristic) {
+                    characteristic.classList.toggle('hidden-characteristic');
+
+                    // Сохранение состояния раскрытых характеристик в sessionStorage
+                    var playerCharacteristics = sessionStorage.getItem(`player-${playerName}`);
+                    if (playerCharacteristics) {
+                        playerCharacteristics = JSON.parse(playerCharacteristics);
+                    } else {
+                        playerCharacteristics = {};
+                    }
+                    playerCharacteristics[index] = !characteristic.classList.contains('hidden-characteristic');
+                    sessionStorage.setItem(`player-${playerName}`, JSON.stringify(playerCharacteristics));
+                }
+            };
+        });
+    </script>
+</body>
+</html>

@@ -1,4 +1,3 @@
-from flask import Flask, render_template, redirect, url_for, request
 from random import randint
 import random
 import os
@@ -6,16 +5,30 @@ import os
 CPERCENT = 65
 UPERCENT = 25
 
-app = Flask(__name__)
-
-class Player():
+class Player:
     def __init__(self, name, characteristics):
         self.name = name
         self.characteristics = characteristics
+        self.num_characteristics = len(characteristics)
+        self.number = int(name.split('_')[1])
 
     def print_characteristics(self):
         print(self.characteristics)
 
+    def save_player_data(self):
+        os.makedirs('data/players', exist_ok=True)
+        with open(f'data/players/{self.name}.txt', 'w', encoding='utf-8') as f:
+            for line in self.characteristics:
+                f.write(line + '\n')
+
+    @classmethod
+    def load_player_data(cls, filename):
+        with open(filename, 'r', encoding='utf-8') as f:
+            lines = [line.strip() for line in f]
+        name = lines[0].replace('КАРТОЧКА ИГРОКА ', 'player_')
+        characteristics = lines[1:]
+        return cls(name, characteristics)
+    
 def load_characteristic(filename1, filename2, filename3, multiply):
     if multiply == 0:
         characteristic = [a.strip() for a in open(filename1, 'r', encoding='utf-8')]
@@ -78,49 +91,35 @@ def pick_value(data):
     return sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition
 
 def create_player(n, sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition):
-    profile = []
-    profile.append('КАРТОЧКА ИГРОКА ' + str(n))
-    profile.append('Био-характеристика: ' + sex + ' / Возраст ' + age)
-    profile.append('Ориентация: ' + gender)
-    profile.append('Род деятельности: ' + job)
-    profile.append('Состояние здоровья: ' + health)
-    profile.append('Фобия: ' + fobia)
-    profile.append('Черта характера: ' + personality)
-    profile.append('Хобби: ' + hobby)
-    profile.append('Знание: ' + knowledge)
-    profile.append('Доп. информация: ' + fact)
-    profile.append('Багаж: ' + bagage)
-    profile.append('Карта действия: ' + action)
-    profile.append('Карта условия: ' + condition)
-    return Player(f"Игрок {n}", profile)
+    profile = [
+        f'КАРТОЧКА ИГРОКА {n}',
+        f'Био-характеристика: {sex} / Возраст {age}',
+        f'Ориентация: {gender}',
+        f'Род деятельности: {job}',
+        f'Состояние здоровья: {health}',
+        f'Фобия: {fobia}',
+        f'Черта характера: {personality}',
+        f'Хобби: {hobby}',
+        f'Знание: {knowledge}',
+        f'Доп. информация: {fact}',
+        f'Багаж: {bagage}',
+        f'Карта действия: {action}',
+        f'Карта условия: {condition}'
+    ]
+    return Player(f"player_{n}", profile)
 
-@app.route('/')
-def index():
-    return redirect(url_for('players'))
-
-@app.route('/players')
-def players():
-    player_data = []
+def new_game(n):
     data = load_array()
-    for i in range(1, 6):  # Создаем 5 игроков, можно изменить количество по необходимости
+    players = []
+    for i in range(1, n + 1):
         sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition = pick_value(data)
         player = create_player(i, sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition)
-        player_data.append(player)
-        with open(f'data/player_{i}.txt', 'w', encoding='utf-8') as f:
-            for line in player.characteristics:
-                f.write(line + '\n')
-    return render_template('players.html', players=player_data)
-
-@app.route('/player/<int:player_id>')
-def player(player_id):
-    try:
-        with open(f'data/player_{player_id}.txt', 'r', encoding='utf-8') as f:
-            characteristics = f.readlines()
-        return render_template('player.html', player_id=player_id, characteristics=characteristics)
-    except FileNotFoundError:
-        return "Player not found", 404
+        players.append(player)
+        player.save_player_data()
 
 if __name__ == "__main__":
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    data = load_array()
+    sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition = pick_value(data)
+    player1 = create_player(1, sex, age, gender, job, health, fobia, personality, hobby, knowledge, fact, bagage, action, condition)
+    player1.print_characteristics()
+    player1.save_player_data()
