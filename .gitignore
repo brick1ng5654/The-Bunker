@@ -1,0 +1,5 @@
+.env
+# ignore all logs
+*.log
+old/
+characteristics.txt
