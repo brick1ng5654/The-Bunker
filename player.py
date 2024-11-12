@@ -36,8 +36,7 @@ class Player:
     
     def return_info(self):
         print(self.player_name, self.player_number, self.characteristics)
-        return [self.player_name, self.player_number
-                , self.characteristics]
+        return [self.player_name, self.player_number, self.characteristics]
     
     # Метод для установки видимости характеристики
     def set_visibility(self, characteristic, is_visible):
@@ -57,7 +56,7 @@ class Player:
             return False
         
     # Метод для загрузки характеристик из текстового файла
-    def load_characteristics(self, filename="characteristics.txt"):
+    def load_characteristics(self, filename="player_characteristics.txt"):
         characteristics = {}
         with open(filename, "r", encoding="utf-8") as file:
             for line in file:

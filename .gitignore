@@ -2,4 +2,5 @@
 # ignore all logs
 *.log
 old/
-characteristics.txt
+player_characteristics.txt
+bunker_characteristics.txt
