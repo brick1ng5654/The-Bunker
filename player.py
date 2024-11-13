@@ -2,10 +2,10 @@ from logger import logger
 import random
 
 class Player:
-    def __init__(self, player_name, player_number, player_id):
-        self.player_name = player_name
+    def __init__(self, user_id, user_firstname, user_username, player_number):
+        self.user_name = user_firstname
         self.player_number = player_number
-        self.player_id = player_id
+        self.user_id = user_id
         # Словарь для работы с индексами харакетристик
         self.characteristic_index= {
             "action": 0,

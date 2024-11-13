@@ -16,7 +16,8 @@ app = Application.builder().token(TOKEN).build()
 # Глобальные переменные
 player_number = 1 # Количество игроков в сессии
 players = {} # Словарь игроков
-session_active = False # Активна ли игра
+session_active = False # Активна ли сессия
+game_active = False # Активна ли игра
 admin = 0 # Админ сессии
 
 async def start(update: Update, context: CallbackContext) -> None:
@@ -37,13 +38,15 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if text == "создать сессию":
         await create_session(update, context)
     elif text == "присоединиться к сессии":
-        await update.message.reply_text("подключение к сессии")
+        await join_session(update, context)
     elif text == "участники":
         await members(update, context)
     elif text == "отключиться":
         await disconnect(update, context)
     elif text == "главное меню":
         await menu(update, context)
+    elif text == "начать игру":
+        await create_game(update, context)
     else:
         logger.info(f"{user.first_name}: {text}")
         await update.message.reply_text("Неизвестная команда. Пожалуйста, выберите действие на клавиатуре.")
@@ -57,8 +60,20 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ["Создать сессию", "Присоединиться к сессии"]
     ]
 
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True,one_time_keyboard=True)
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True,one_time_keyboard=False)
     await update.message.reply_text("Главное меню", reply_markup=reply_markup)
+
+async def session_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global session_active
+    if (not session_active):
+        update.message.reply_text("Сначала покиньте активную сессию")
+        return
+    keyboard = [
+        ["Начать игру", "Участники"],
+        ["Отключиться"]
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
+    await update.message.reply_text("Меню сессии", reply_markup=reply_markup)
 
 # Функция для обработки "Создать сессию"
 async def create_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -80,13 +95,7 @@ async def create_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"Пользователь {user.username} создал сессию и является её админом")
     players[user.id] = [user.id, user.first_name, user.username]
 
-    keyboard = [
-        ["Начать игру", "Участники"],
-        ["Отключиться"]
-    ]
-
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
-    await update.message.reply_text("Вы начали сессию! Другие участники могут к ней присоединиться.", reply_markup=reply_markup)
+    await session_menu(update, context)
 
 async def members(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global session_active
@@ -130,11 +139,32 @@ async def disconnect(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
     await update.message.reply_text("Вы не подключены к сессии")   
 
+async def join_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global session_active
+    user = update.message.from_user
+
+    if(session_active):
+        players[user.id] = [user.id, user.first_name, user.username]
+        await session_menu(update, context)
+    else:
+        await update.message.reply_text("Сессия ещё не начата. Быстрее создавай и приглашай друзей!")
+
+async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global game_active, admin
+    user = update.message.from_user
+    try:
+        if admin.id == user.id:
+            for user_id, user_info in players.items():
+                logger.info(f"{user_info}")
+                # players[user_id] = Player([user_info])
+        else:
+            await update.message.reply_text("Сессию может начать только администратор сессии")
+            return
+    except Exception as e:
+        logger.error(f"{e}", exc_info=True)
+
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-app.add_handler(MessageHandler(filters.TEXT & filters.Regex("(?i)^Создать сессию$"), create_session))
-app.add_handler(MessageHandler(filters.TEXT & filters.Regex("(?i)^Участники$"), members))
-app.add_handler(MessageHandler(filters.TEXT & filters.Regex("(?i)^Отключиться$"), disconnect))
 
 # Запуск бота
 if __name__ == "__main__":
