@@ -5,6 +5,7 @@ class Player:
     def __init__(self, user_id, user_firstname, user_username, player_number):
         self.user_name = user_firstname
         self.player_number = player_number
+        self.user_username = user_username
         self.user_id = user_id
         # Словарь для работы с индексами харакетристик
         self.characteristic_index= {
@@ -28,7 +29,7 @@ class Player:
         self.set_characteristics()
         self.visible = [0]*13
 
-        logger.info("Экземпляр класса Player создан")
+        logger.info(f"Экземпляр класса Player для {user_username} создан")
 
     def return_visibility(self):
         # print(self.visible)
