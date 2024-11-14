@@ -104,7 +104,7 @@ class Player:
             if options:
                 # Случайный выбор значения
                 self.characteristics[characteristic] = random.choice(options)
-                logger.info(f"{characteristic.capitalize()} установлена как: {self.characteristics[characteristic]}")
+                logger.debug(f"Для пользователя {self.user_id} ({self.user_username}){characteristic.capitalize()} установлена как: {self.characteristics[characteristic]}")
             else:
                 logger.info(f"Нет доступных опций для редкости {rarity_level} у {characteristic}")
         else:
