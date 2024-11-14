@@ -59,20 +59,25 @@ class Player:
     # Метод для загрузки характеристик из текстового файла
     def load_characteristics(self, filename="player_characteristics.txt"):
         characteristics = {}
-        with open(filename, "r", encoding="utf-8") as file:
-            for line in file:
-                line = line.strip()
-                if line:
-                    key, values = line.split(":")
-                    items = values.split(",")
-                    characteristics[key] = []
-                    for item in items:
-                        if "=" in item:
-                            rarity, value = item.split("=")
-                            characteristics[key].append((rarity, value))
-                        else:
-                            logger.info(f"Некорректный формат строки: {item}")
-        return characteristics
+        try:
+            with open(filename, "r", encoding="utf-8") as file:
+                for line in file:
+                    line = line.strip()
+                    if line:
+                        key, values = line.split(":")
+                        items = values.split(",")
+                        characteristics[key] = []
+                        for item in items:
+                            if "=" in item:
+                                rarity, value = item.split("=")
+                                characteristics[key].append((rarity, value))
+                            else:
+                                logger.info(f"Некорректный формат строки: {item}")
+            logger.debug("Метод load_characteristics был выполнен")
+            return characteristics
+        except Exception as e:
+            logger.warning("Не удалось выполнить метод load_characteristics")
+            logger.error(e, exc_info=True)
 
 
     # Метод для получения редкости характеристики на основе случайного числа
@@ -88,7 +93,7 @@ class Player:
     # Метод для установки характеристики с учетом её редкости
     def set_characteristic(self, characteristic):
         rarity_level = self.get_rarity()
-        logger.info(f"Для характеристики {characteristic} выбрана редкость: {rarity_level}")
+        # logger.info(f"Для характеристики {characteristic} выбрана редкость: {rarity_level}")
         
         if characteristic in self.available_characteristics:
             # Получаем все возможные значения для данной характеристики и её редкости

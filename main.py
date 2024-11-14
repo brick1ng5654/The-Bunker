@@ -176,23 +176,24 @@ async def create_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await session_menu(update, context)
 
-### before checked
-
+# Команда вызова вывода списка всех участников сессии
 async def members(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global session_active
-
     user = update.message.from_user
 
     if session_active:
         if(user.id in users.keys()):
-            await update.message.reply_text("Список участников сессии:")
+            await update.message.reply_text(f"Список участников сессии ({len(players)}):")
             for player_info in users.values():
                 await update.message.reply_text(f"{player_info[1]}")
+            logger.debug("Вывод списка участников сессии")
             return
         else:
+            logger.debug(f"Пользователь {user.id} ({user.username}) не подлкюченный к сессии попытался вывести список участников")
             await update.message.reply_text("Вы не присоединены к сессии")
+    logger.debug(f"Пользователь {user.id} ({user.username}) попытался вывести список несуществующей сессии")
     await update.message.reply_text("Сессия ещё не начата. Быстрее создавай и приглашай друзей!")
 
+# Команда отключения от сессии
 async def disconnect(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global session_active, users_number
 
@@ -230,6 +231,8 @@ async def join_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if(session_active):
         users[user.id] = [user.id, user.first_name, user.username]
         logger.info(f"{user.username} присоединился к сессии {admin.username}")
+        message = f"Пользователь {user.username} присоединился к сессии!"
+        context.bot.send_message(chat_id=admin.id, text=message)
         await session_menu(update, context)
     else:
         await update.message.reply_text("Сессия ещё не начата. Быстрее создавай и приглашай друзей!")
@@ -252,7 +255,6 @@ async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"{e}", exc_info=True)
         await update.message.reply_text("Сессия ещё не начата. Быстрее создавай и приглашай друзей!")
         return
-
 
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
