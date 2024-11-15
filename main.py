@@ -37,38 +37,37 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text  # Получаем текст сообщения
     text = text.lower() # Сводим к одному регистру
 
-
-
     if text == "создать сессию":
         await create_session(update, context)
     elif text == "присоединиться к сессии":
         await join_session(update, context)
-    elif text == "участники":
-        await members(update, context)
-    elif text == "отключиться":
-        await disconnect(update, context)
-    elif text == "главное меню":
-        await main_menu(update, context)
-    elif text == "начать игру":
-        await create_game(update, context)
-    elif text == "профиль":
-        await my_profile(update, context)
-    elif text == "раскрыть характеристику":
-        await reveal_atribute_menu(update, context)
-    elif text == "назад":
-        await back_to_profile(update, context, admin.id)
-    elif text == "меню игры":
-        if user.id == admin.id: await call_admin_game_menu(update, context)
-        else: await call_game_menu(update, context)
-    else:
-        # Проверяем, содержится ли текст в self.key_mapping
-        for key, value in Player.return_key_mapping().items():  # Предполагаем, что доступ к key_mapping осуществляется через класс Player
-            if text == value.lower():  # Сравниваем на совпадение с русским значением
-                await reveal_atribute(update, context, key)
-                return
+    if session_active: # remove odd checks in functions !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if text == "участники":
+            await members(update, context)
+        elif text == "отключиться":
+            await disconnect(update, context)
+        elif text == "главное меню":
+            await main_menu(update, context)
+        elif text == "начать игру":
+            await create_game(update, context)
+        elif text == "профиль":
+            await my_profile(update, context)
+        elif text == "раскрыть характеристику":
+            await reveal_atribute_menu(update, context)
+        elif text == "назад":
+            await back_to_profile(update, context, admin.id)
+        elif text == "меню игры":
+            if user.id == admin.id: await call_admin_game_menu(update, context)
+            else: await call_game_menu(update, context)
+        else:
+            # Проверяем, содержится ли текст в self.key_mapping
+            for key, value in Player.return_key_mapping().items():  # Предполагаем, что доступ к key_mapping осуществляется через класс Player
+                if text == value.lower():  # Сравниваем на совпадение с русским значением
+                    await reveal_atribute(update, context, key)
+                    return
 
-        logger.warning(f"{user.id} ({user.username}): {text}") # Ввод некорректной команды
-        await update.message.reply_text("Неизвестная команда. Пожалуйста, выберите действие на клавиатуре.")
+            logger.warning(f"{user.id} ({user.username}): {text}") # Ввод некорректной команды
+            await update.message.reply_text("Неизвестная команда. Пожалуйста, выберите действие на клавиатуре.")
 
 # Вызов главного меню
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -276,6 +275,27 @@ async def reveal_atribute(update: Update, context: ContextTypes.DEFAULT_TYPE, at
 
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+
+
+async def print_all_players_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.debug("Начало вывода информации об игроках")
+    for player_id, player in players.items():
+        logger.debug(f"Вывод информации о {player.id} ({player.username})")
+        for key, value in player.characteristics.items():
+            if player.is_visible(key):
+                atribute_name = Player.key_mapping.get(key, key)
+                await update.message.reply_text(f"{atribute_name}: {value}")
+    # Сбор неизвестных характеристик
+    unknown_atribute = [
+        Player.key_mapping.get(key, key)
+        for key in player.characteristics.keys()
+        if not player.is_visible(key)
+    ]
+
+    if unknown_atribute:
+        print("Неизвестные характеристики: " + ", ".join(unknown_atribute))
+    print("-" * 15)  # Разделитель между игроками
+
 
 # Запуск бота
 if __name__ == "__main__":
