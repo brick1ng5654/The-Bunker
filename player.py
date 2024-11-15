@@ -36,8 +36,8 @@ class Player:
         return self.visible
     
     def return_info(self):
-        print(self.player_name, self.player_number, self.characteristics)
-        return [self.player_name, self.player_number, self.characteristics]
+        print(self.user_username, self.player_number, self.characteristics)
+        return [self.user_username, self.player_number, self.characteristics]
     
     # Метод для установки видимости характеристики
     def set_visibility(self, characteristic, is_visible):

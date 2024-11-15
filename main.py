@@ -33,9 +33,12 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 # Обработчик текстовых сообщений, реагирующий на команды без "/"
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
     text = update.message.text  # Получаем текст сообщения
     text = text.lower() # Сводим к одному регистру
-    
+
+    context.user_data['current_menu'] = text
+
     if text == "создать сессию":
         await create_session(update, context)
     elif text == "присоединиться к сессии":
@@ -48,11 +51,15 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await main_menu(update, context)
     elif text == "начать игру":
         await create_game(update, context)
+    elif text == "профиль":
+        await my_profile(update, context)
+    elif text == "назад":
+        await back_to_prev_menu(update, context, prev_menu)
     else:
-        user = update.message.from_user
         logger.warning(f"{user.id} ({user.username}): {text}") # Ввод некорректной команды
         
         await update.message.reply_text("Неизвестная команда. Пожалуйста, выберите действие на клавиатуре.")
+    prev_menu = text
 
 # Вызов главного меню
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -236,6 +243,14 @@ async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"{e}", exc_info=True)
         await update.message.reply_text("Сессия ещё не начата. Быстрее создавай и приглашай друзей!")
         return
+
+async def my_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global players
+    user = update.message.from_user
+
+    characteristic = players[user.id].return_info()
+    await update.message.reply_text(f"{characteristic}")
+    await call_profile_menu(update, context)
 
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))

@@ -1,5 +1,7 @@
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import ContextTypes
+from main import my_profile
+from logger import logger
 
 # Основное меню
 main_menu = [
@@ -65,7 +67,7 @@ profile_menu = [
 
 profile_menu_reply_markup = ReplyKeyboardMarkup(profile_menu, resize_keyboard=True, one_time_keyboard=False)
 
-async def call_profile_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, message=""):
+async def call_profile_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, message="Меню профиля:"):
     await update.message.reply_text(message, reply_markup=profile_menu_reply_markup)
 
 # Меню раскрытия характеристики
@@ -96,3 +98,13 @@ vote_menu_reply_markup = ReplyKeyboardMarkup(vote_menu, resize_keyboard=True, on
 
 async def call_vote_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, message="Меню голосования:"):
     await update.message.reply_text(message, vote_menu_reply_markup)
+
+# Кнопка выхода назад
+
+async def back_to_prev_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, prev_menu):
+    prev_menu = context.user_data.get('current_menu')
+    logger.info(f"{prev_menu}")
+    if prev_menu == "профиль":
+        await my_profile(update, context)
+    else:
+        await update.message.reply_text("Неизвестное предыдущее меню.")
