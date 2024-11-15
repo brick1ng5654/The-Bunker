@@ -37,7 +37,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text  # Получаем текст сообщения
     text = text.lower() # Сводим к одному регистру
 
-    context.user_data['current_menu'] = text
+
 
     if text == "создать сессию":
         await create_session(update, context)
@@ -53,13 +53,22 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await create_game(update, context)
     elif text == "профиль":
         await my_profile(update, context)
+    elif text == "раскрыть характеристику":
+        await reveal_atribute_menu(update, context)
     elif text == "назад":
-        await back_to_prev_menu(update, context, prev_menu)
+        await back_to_profile(update, context, admin.id)
+    elif text == "меню игры":
+        if user.id == admin.id: await call_admin_game_menu(update, context)
+        else: await call_game_menu(update, context)
     else:
+        # Проверяем, содержится ли текст в self.key_mapping
+        for key, value in Player.return_key_mapping().items():  # Предполагаем, что доступ к key_mapping осуществляется через класс Player
+            if text == value.lower():  # Сравниваем на совпадение с русским значением
+                await reveal_atribute(update, context, key)
+                return
+
         logger.warning(f"{user.id} ({user.username}): {text}") # Ввод некорректной команды
-        
         await update.message.reply_text("Неизвестная команда. Пожалуйста, выберите действие на клавиатуре.")
-    prev_menu = text
 
 # Вызов главного меню
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -245,12 +254,25 @@ async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
 async def my_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global players
+    # global players
     user = update.message.from_user
-
-    characteristic = players[user.id].return_info()
-    await update.message.reply_text(f"{characteristic}")
+    message = players[user.id].print_my_profile()
+    await update.message.reply_text(message)
     await call_profile_menu(update, context)
+
+async def reveal_atribute_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
+    logger.debug(f"{user.id} ({user.username}) нажал кнопку 'Раскрыть характеристику'")
+    await call_reveal_atribute_menu(update, context)
+
+async def reveal_atribute(update: Update, context: ContextTypes.DEFAULT_TYPE, atribute):
+    user = update.message.from_user
+    if not game_active:
+        logger.debug(f"{user.id} ({user.username}) попытался раскрыть характеристику вне игры")
+        await update.message.reply_text("Вы не находитесь в игре")
+    logger.debug(f"Характеристика {atribute} раскрыта у пользователя {user.id} ({user.username})")
+    players[user.id].set_visibility(atribute, 1)
+    await update.message.reply_text("Вы раскрыли характеристику!")
 
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))

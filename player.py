@@ -9,19 +9,19 @@ class Player:
         self.user_id = user_id
         # Словарь для работы с индексами харакетристик
         self.characteristic_index= {
-            "action": 0,
+            "job": 0,
             "age": 1,
-            "bagage": 2,
-            "condition": 3,
-            "fact": 4,
-            "fobia": 5,
-            "gender": 6,
-            "health": 7,
-            "hobby": 8,
-            "job": 9,
-            "knowledge": 10,
-            "sex": 11,
-            "personality": 12,
+            "health": 2,
+            "sex": 3,
+            "gender": 4,
+            "hobby": 5,
+            "knowledge": 6,
+            "fobia": 7,
+            "fact": 8,
+            "personality": 9,
+            "bagage": 10,
+            "action": 11,
+            "condition": 12,
         }
         # Загрузка характеристик из файла
         self.available_characteristics = self.load_characteristics()
@@ -31,12 +31,32 @@ class Player:
 
         logger.info(f"Экземпляр класса Player для {user_username} создан")
 
+    # Маппинг ключей характеристик на их русские названия
+    key_mapping = {
+        "job": "Деятельность",
+        "age": "Возраст",
+        "health": "Здоровье",
+        "sex": "Пол",
+        "gender": "Ориентация",
+        "hobby": "Хобби",
+        "knowledge": "Знание",
+        "fobia": "Фобия",
+        "fact": "Факт",
+        "personality": "Характер",
+        "bagage": "Багаж",
+        "action": "Карта действия",
+        "condition": "Карта условия",
+    }
+
+    @staticmethod
+    def return_key_mapping():
+        return Player.key_mapping
+
     def return_visibility(self):
         # print(self.visible)
         return self.visible
     
     def return_info(self):
-        print(self.user_username, self.player_number, self.characteristics)
         return [self.user_username, self.player_number, self.characteristics]
     
     # Метод для установки видимости характеристики
@@ -56,6 +76,15 @@ class Player:
             logger.info(f"Характеристику {characteristic} не удалось найти")
             return False
         
+    # Метод получения информации о характеристике
+    def print_my_profile(self):
+        result = []
+        for key, value in self.characteristics.items():
+            status = "(o)" if self.is_visible(key) else "(-)"
+            name = Player.key_mapping.get(key, key)  # Русское название или ключ, если не найден
+            result.append(f"{status} {name}: {value}")
+        return "\n".join(result)
+    
     # Метод для загрузки характеристик из текстового файла
     def load_characteristics(self, filename="player_characteristics.txt"):
         characteristics = {}

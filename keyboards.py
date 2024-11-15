@@ -1,6 +1,5 @@
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import ContextTypes
-from main import my_profile
 from logger import logger
 
 # Основное меню
@@ -72,19 +71,19 @@ async def call_profile_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
 # Меню раскрытия характеристики
 reveal_atribute_menu = [
-    ["Деятельность", "Деятельность"],
+    ["Деятельность"],
     ["Возраст", "Здоровье"],
     ["Пол", "Ориентация"],
     ["Хобби", "Знание"],
     ["Фобия", "Факт"],
-    ["Черта", "Багаж"],
+    ["Характер", "Багаж"],
     ["Карта действия", "Карта условия"],
     ["Назад"]
 ]
 
 reveal_atribute_menu_reply_markup = ReplyKeyboardMarkup(reveal_atribute_menu, resize_keyboard=True, one_time_keyboard=False)
 
-async def call_reveal_atribute_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, message=""):
+async def call_reveal_atribute_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, message="Раскрыть характеристику:"):
     await update.message.reply_text(message, reply_markup=reveal_atribute_menu_reply_markup)
 
 # Меню голосования
@@ -99,12 +98,10 @@ vote_menu_reply_markup = ReplyKeyboardMarkup(vote_menu, resize_keyboard=True, on
 async def call_vote_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, message="Меню голосования:"):
     await update.message.reply_text(message, vote_menu_reply_markup)
 
+
 # Кнопка выхода назад
 
-async def back_to_prev_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, prev_menu):
-    prev_menu = context.user_data.get('current_menu')
-    logger.info(f"{prev_menu}")
-    if prev_menu == "профиль":
-        await my_profile(update, context)
-    else:
-        await update.message.reply_text("Неизвестное предыдущее меню.")
+async def back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE, admin_id):
+    user = update.message.from_user
+    if(user.id == admin_id): await call_admin_game_menu(update, context)
+    else: await call_game_menu(update, context)
