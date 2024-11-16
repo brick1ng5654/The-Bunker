@@ -39,35 +39,65 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if text == "создать сессию":
         await create_session(update, context)
+        return
     elif text == "присоединиться к сессии":
         await join_session(update, context)
-    if session_active: # remove odd checks in functions !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        return
+
+    elif session_active and not game_active:
+        # Сессия активна, но игра не запущена
         if text == "участники":
             await members(update, context)
-        elif text == "отключиться":
+            return
+        elif text in ["отключиться", "завершить сессию"]:
             await disconnect(update, context)
+            return
         elif text == "главное меню":
             await main_menu(update, context)
+            return
         elif text == "начать игру":
             await create_game(update, context)
-        elif text == "профиль":
+            return
+        else:
+            await wrong_comand(update, context, text)
+
+    elif game_active:
+        # Игра запущена
+        if text == "профиль":
             await my_profile(update, context)
+            return
         elif text == "раскрыть характеристику":
             await reveal_atribute_menu(update, context)
+            return
         elif text == "назад":
             await back_to_profile(update, context, admin.id)
+            return
         elif text == "меню игры":
-            if user.id == admin.id: await call_admin_game_menu(update, context)
-            else: await call_game_menu(update, context)
+            if user.id == admin.id:
+                await call_admin_game_menu(update, context)
+            else:
+                await call_game_menu(update, context)
+            return
+        elif text == "участники":
+            await members(update, context)
+            return
+        elif text == "игроки":
+            await print_all_players_info(update, context)
+            return
         else:
-            # Проверяем, содержится ли текст в self.key_mapping
-            for key, value in Player.return_key_mapping().items():  # Предполагаем, что доступ к key_mapping осуществляется через класс Player
+            # Проверяем, содержится ли текст в key_mapping
+            for key, value in Player.return_key_mapping().items():
                 if text == value.lower():  # Сравниваем на совпадение с русским значением
                     await reveal_atribute(update, context, key)
                     return
+            
+            await wrong_comand(update, context, text)
 
-            logger.warning(f"{user.id} ({user.username}): {text}") # Ввод некорректной команды
-            await update.message.reply_text("Неизвестная команда. Пожалуйста, выберите действие на клавиатуре.")
+
+async def wrong_comand(update: Update, context: ContextTypes.DEFAULT_TYPE, text, message="Неизвестная команда. Пожалуйста, выберите действие на клавиатуре."):
+    user = update.message.from_user
+    logger.warning(f"Пользователь {user.id} ({user.username}) ввёл неизвестную команду '{text}'")
+    await update.message.reply_text(message)
 
 # Вызов главного меню
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -88,7 +118,7 @@ async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Вызов главного меню для всех участников группы members
 async def main_menu_for_all_members(members, context: ContextTypes.DEFAULT_TYPE):
     logger.debug(f"Вызывание основного меню для всех пользователей {members.keys()}")
-    await notify_all_members(members, "Главное меню:", context, reply_markup=main_menu_reply_markup)
+    await notify_all_members(members, context, "Главное меню:", reply_markup=main_menu_reply_markup)
 
 # Вызов меню сессии
 async def session_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -106,7 +136,7 @@ async def session_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Вызов меню сессии для всех участников группы members
 async def session_menu_for_all_members(members, context: ContextTypes.DEFAULT_TYPE):
     logger.debug(f"Вызывание меню сессии для всех пользователей {members}") # Возможна проблема с {members}
-    notify_all_members(members, "Меню сессии:", context, reply_markup=user_session_menu_reply_markup)
+    notify_all_members(members, context, "Меню сессии:", reply_markup=user_session_menu_reply_markup)
 
 # Вызов меню игры
 async def game_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -132,10 +162,10 @@ async def game_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Вызов меню игры для всех участников группы members
 async def game_menu_for_all_members(members, context: ContextTypes.DEFAULT_TYPE):
     logger.debug("Вызывание игрового меню для всех пользователей")
-    await notify_all_members(members, "Меню игры:", context, reply_markup=player_game_menu_reply_markup)
+    await notify_all_members(members, context, "Меню игры:", reply_markup=player_game_menu_reply_markup)
 
 # Вызов текстового сообщения message_text с reply_markup (пустым по умолчанию) для всех участников группы members 
-async def notify_all_members(members, message_text, context: ContextTypes.DEFAULT_TYPE, reply_markup=""):
+async def notify_all_members(members, context: ContextTypes.DEFAULT_TYPE, message_text, reply_markup=""):
     logger.debug(f"Сообщение '{message_text}' всем пользователям группы {members.keys()}")
     for member_id in members.keys():
         try:
@@ -191,18 +221,17 @@ async def disconnect(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user.id in users.keys():
             if (admin.id == user.id):
                 logger.info(f"{admin.username} завершил сессию:")
-                notify_all_members(users, message_text=f"Администратор сессии {admin.username} завершил её")
+                await notify_all_members(users, context, message_text=f"Администратор сессии {admin.username} завершил её")
                 await main_menu_for_all_members(users, context)
                 users_number = 0
                 session_active = False
                 for user_id, user_info in list(users.items()):
                     logger.info(f"{user_info[2]} покинул сессию")
                     users.pop(user_id, None)
-                await update.message.reply_text("Вы завершили сессию")
                 return
             else:
                 logger.info(f"{user.username} покинул сессию")
-                notify_all_members(users, message_text=f"{user.username} покинул сессию")
+                notify_all_members(users, context, message_text=f"{user.username} покинул сессию")
                 users.pop(user.id, None)
                 users_number-=1
                 await update.message.reply_text("Вы покинули сессию")
@@ -222,7 +251,7 @@ async def join_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if(session_active):
         message = f"Пользователь {user.username} присоединился к сессии!"
-        await notify_all_members(users, message, context)
+        await notify_all_members(users, context, message)
         users[user.id] = [user.id, user.first_name, user.username]
         logger.info(f"{user.id} ({user.username}) присоединился к сессии {admin.id} ({admin.username})")
         await session_menu(update, context)
@@ -240,7 +269,7 @@ async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 players[user_id] = Player(*user_info, users_number)
                 users_number+=1
             logger.info(f"Игра начата. Список игрков: {players.keys()}")
-            await notify_all_members(players,"Игра начинается! Желаю приятной игры и веселья!", context)
+            await notify_all_members(players, context, "Игра начинается! Желаю приятной игры и веселья!")
             players_without_admin = {user_id: player for user_id, player in players.items() if user_id != admin.id}
             await game_menu_for_all_members(players_without_admin, context)
             await call_admin_game_menu(update, context)
@@ -269,32 +298,36 @@ async def reveal_atribute(update: Update, context: ContextTypes.DEFAULT_TYPE, at
     if not game_active:
         logger.debug(f"{user.id} ({user.username}) попытался раскрыть характеристику вне игры")
         await update.message.reply_text("Вы не находитесь в игре")
-    logger.debug(f"Характеристика {atribute} раскрыта у пользователя {user.id} ({user.username})")
-    players[user.id].set_visibility(atribute, 1)
-    await update.message.reply_text("Вы раскрыли характеристику!")
-
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-
+    if players[user.id].is_visible(atribute):
+        await update.message.reply_text(f"Характеристика уже раскрыта! Пожалуйста, выберите другую.")
+    else:
+        logger.debug(f"Характеристика {atribute} раскрыта у пользователя {user.id} ({user.username})")
+        players[user.id].set_visibility(atribute, 1)
+        await update.message.reply_text("Вы раскрыли характеристику!")
 
 async def print_all_players_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.debug("Начало вывода информации об игроках")
     for player_id, player in players.items():
-        logger.debug(f"Вывод информации о {player.id} ({player.username})")
+        logger.debug(f"Вывод информации о {player.user_id} ({player.user_username})")
+        message = f"({player.player_number}) {player.user_name}:\n"
         for key, value in player.characteristics.items():
             if player.is_visible(key):
                 atribute_name = Player.key_mapping.get(key, key)
-                await update.message.reply_text(f"{atribute_name}: {value}")
-    # Сбор неизвестных характеристик
-    unknown_atribute = [
-        Player.key_mapping.get(key, key)
-        for key in player.characteristics.keys()
-        if not player.is_visible(key)
-    ]
+                message = message + f"{atribute_name}: {value}\n"
+        # Сбор неизвестных характеристик
+        unknown_atribute = [
+            Player.key_mapping.get(key, key)
+            for key in player.characteristics.keys()
+            if not player.is_visible(key)
+        ]
 
-    if unknown_atribute:
-        print("Неизвестные характеристики: " + ", ".join(unknown_atribute))
-    print("-" * 15)  # Разделитель между игроками
+        if unknown_atribute:
+            message = message + "\n"
+            message = message+("Неизвестные характеристики: " + ", ".join(unknown_atribute))
+        await update.message.reply_text(message)
+
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
 
 # Запуск бота

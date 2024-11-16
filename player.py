@@ -79,6 +79,7 @@ class Player:
     # Метод получения информации о характеристике
     def print_my_profile(self):
         result = []
+        result.append(f"({self.player_number}) {self.user_name}")
         for key, value in self.characteristics.items():
             status = "(o)" if self.is_visible(key) else "(-)"
             name = Player.key_mapping.get(key, key)  # Русское название или ключ, если не найден

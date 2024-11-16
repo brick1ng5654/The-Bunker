@@ -1,1 +1,1 @@
-await game_menu(update, context)
+print_my_profile

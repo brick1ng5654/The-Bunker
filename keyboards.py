@@ -26,7 +26,7 @@ async def call_admin_session_menu(update: Update, context: ContextTypes.DEFAULT_
 # Меню сессии пользователя
 user_session_menu = [
     ["Участники"],
-    ["Завершить сессию"]
+    ["Отключиться"]
 ]
 
 user_session_menu_reply_markup = ReplyKeyboardMarkup(user_session_menu, resize_keyboard=True, one_time_keyboard=False)
