@@ -98,10 +98,19 @@ vote_menu_reply_markup = ReplyKeyboardMarkup(vote_menu, resize_keyboard=True, on
 async def call_vote_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, message="Меню голосования:"):
     await update.message.reply_text(message, vote_menu_reply_markup)
 
-
 # Кнопка выхода назад
 
 async def back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE, admin_id):
     user = update.message.from_user
     if(user.id == admin_id): await call_admin_game_menu(update, context)
     else: await call_game_menu(update, context)
+
+other_menu = [
+    ["Участники", "Покинуть игру"],
+    ["Назад"]
+]
+
+other_meny_reply_markup = ReplyKeyboardMarkup(other_menu, resize_keyboard=True, one_time_keyboard=False)
+
+async def call_other_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, message="Вспомогательное меню игры:"):
+    await update.message.reply_text(message, reply_markup=other_meny_reply_markup)

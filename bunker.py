@@ -16,6 +16,13 @@ class Bunker:
         self.characteristics = {}
         self.set_characteristics()
 
+    key_mapping = {
+        "disaster": "Катастрофа",
+        "duration": "Длительность прибывания",
+        "rooms": "Комнаты",
+        "size": "Размер бункера"
+    }
+
     # Метод для загрузки характеристик из текстового файла
     def load_characteristics(self, filename="bunker_characteristics.txt"):
         characteristics = {}
@@ -34,19 +41,42 @@ class Bunker:
         options = [value for value in self.available_characteristics[characteristic]]
 
         if options:
-            # Случайный выбор значения
-            self.characteristics[characteristic] = random.choice(options)
-            logger.info(f"{characteristic.capitalize()} установлена как: {self.characteristics[characteristic]}")
-        else: logger.info(f"Характеристика {characteristic} не найдена")
-            
+            if characteristic == "rooms":
+                # Для "rooms" выбираем случайное количество значений от 1 до 5
+                num_values = random.randint(1, 5)
+                self.characteristics[characteristic] = random.sample(options, min(num_values, len(options)))
+                logger.info(f"{characteristic.capitalize()} установлена как: {', '.join(self.characteristics[characteristic])}")
+            else:
+                # Для остальных характеристик выбираем одно значение
+                self.characteristics[characteristic] = random.choice(options)
+                logger.info(f"{characteristic.capitalize()} установлена как: {self.characteristics[characteristic]}")
+        else:
+            logger.info(f"Характеристика {characteristic} не найдена")
+
+
     def set_characteristics(self):
         for key in self.characteristic_index:
             self.set_characteristic(key)
-    
+
     def return_info(self):
-        print(self.characteristics)
-        return self.characteristics
+        message = "Информация о бункере:\n"
+        for key, value in self.characteristics.items():
+            name = Bunker.key_mapping.get(key, key)  # Получаем русское название характеристики
+
+            # Если значение — это список, форматируем как строку с запятыми
+            if isinstance(value, list):
+                formatted_value = ", ".join(value)
+            else:
+                formatted_value = value if value else "Неизвестно"
+
+            # Добавляем характеристику в сообщение
+            if key == "disaster":
+                message+= f"{formatted_value}\n"
+            else:
+                message += f"{name}: {formatted_value}\n"
+
+        return message
 
 if __name__ == "__main__":
     bunker = Bunker(10)
-    bunker.return_info()
+    print(bunker.return_info())

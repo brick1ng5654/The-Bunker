@@ -3,6 +3,7 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, filters, MessageHandler, ContextTypes
 from logger import logger
 import os
+from bunker import Bunker
 from player import Player
 from keyboards import *
 
@@ -19,6 +20,7 @@ players_number = 0 # Количество игроков в сессии
 users = {} # Словарь пользователей
 admin = None # Админ сессии / Object like user
 players = {} # Словарь игроков
+bunker = None # Object
 session_active = False # Активна ли сессия
 game_active = False # Активна ли игра
 
@@ -83,6 +85,18 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         elif text == "игроки":
             await print_all_players_info(update, context)
+            return
+        elif text == "прочее":
+            await call_other_menu(update, context)
+            return
+        elif text == "покинуть игру":
+            await leave_game(update, context)
+            return
+        elif text == "бункер":
+            await print_bunker_info(update, context)
+            return
+        elif text == "голосование":
+            await vote_for_kick(update, context)
             return
         else:
             # Проверяем, содержится ли текст в key_mapping
@@ -245,6 +259,24 @@ async def disconnect(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Вы не подключены к сессии")
     await main_menu(update, context)   
 
+async def leave_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
+    
+    if user.id in players.keys():
+        if user.id == admin.id:
+            logger.debug(f"{user.id} ({user.username}) завершил игру")
+            await notify_all_members(players, context, "Администратор сессии завершил игру")
+            await main_menu_for_all_members(players, context)
+            for player_id in list(players.keys()):
+                players.pop(player_id)
+        else:
+            logger.debug(f"{user.id} ({user.username}) покинул игру")
+            players.pop(user.id)
+            notify_all_members(players, context, f"{user.first_name} покинул игру")
+            await call_user_session_menu(update, context)
+    else:
+        await update.message.reply_text("Вы не находитесь в игре")
+
 # Команда подключения к сессии
 async def join_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
@@ -260,7 +292,7 @@ async def join_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Команда создания игры
 async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global game_active, users_number, players
+    global game_active, users_number, players, bunker
     user = update.message.from_user
     try:
         if admin.id == user.id:
@@ -268,6 +300,7 @@ async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
             for user_id, user_info in users.items():
                 players[user_id] = Player(*user_info, users_number)
                 users_number+=1
+            bunker = Bunker(users_number)
             logger.info(f"Игра начата. Список игрков: {players.keys()}")
             await notify_all_members(players, context, "Игра начинается! Желаю приятной игры и веселья!")
             players_without_admin = {user_id: player for user_id, player in players.items() if user_id != admin.id}
@@ -320,11 +353,25 @@ async def print_all_players_info(update: Update, context: ContextTypes.DEFAULT_T
             for key in player.characteristics.keys()
             if not player.is_visible(key)
         ]
-
         if unknown_atribute:
             message = message + "\n"
             message = message+("Неизвестные характеристики: " + ", ".join(unknown_atribute))
         await update.message.reply_text(message)
+
+async def print_bunker_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if game_active:
+        bunker_info = bunker.return_info()
+        await update.message.reply_text(bunker_info)
+    else:
+        await update.message.reply_text("Игра ещё не начата!")
+
+async def vote_for_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
+
+    if(user.id != admin.id):
+        await update.message.reply_text("Начать голосование может только администратор сессии")
+        return
+    notify_all_members(players, context, "Начинается голосование за изгнание игрока!")
 
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
