@@ -302,8 +302,10 @@ async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
             game_active = True
             for user_id, user_info in users.items():
                 players_number+=1
-                players[user_id] = Player(*user_info, players_number)
+                players[user_id] = Player(user, players_number)
+                players[user_id].assign_attributes_to_player()
             bunker = Bunker(players_number)
+            bunker.assign_attributes_to_bunker()
             logger.info(f"Игра начата. Список игрков: {players.keys()}")
             await notify_all_members(players, context, "Игра начинается! Желаю приятной игры и веселья!")
             players_without_admin = {user_id: player for user_id, player in players.items() if user_id != admin.id}
@@ -346,14 +348,14 @@ async def print_all_players_info(update: Update, context: ContextTypes.DEFAULT_T
     for player_id, player in players.items():
         logger.debug(f"Вывод информации о {player.user_id} ({player.user_username})")
         message = f"({player.player_number}) {player.user_name}:\n"
-        for key, value in player.characteristics.items():
+        for key, value in player.attributes.items():
             if player.is_visible(key):
                 atribute_name = Player.key_mapping.get(key, key)
                 message = message + f"{atribute_name}: {value}\n"
         # Сбор неизвестных характеристик
         unknown_atribute = [
             Player.key_mapping.get(key, key)
-            for key in player.characteristics.keys()
+            for key in player.attributes.keys()
             if not player.is_visible(key)
         ]
         if unknown_atribute:
@@ -374,7 +376,7 @@ async def vote_for_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if(user.id != admin.id):
         await update.message.reply_text("Начать голосование может только администратор сессии")
         return
-    notify_all_members(players, context, "Начинается голосование за изгнание игрока!")
+    await notify_all_members(players, context, "Начинается голосование за изгнание игрока!")
     question = "Кого следует выгнать?"
     options = []
     for player in players.values():

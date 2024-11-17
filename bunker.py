@@ -4,17 +4,19 @@ import random
 class Bunker:
     def __init__(self, number_of_players):
         self.numb_of_players = number_of_players
+        self.attributes = {}
+        logger.info("Экземпляр класса Bunker создан")
 
-        self.characteristic_index = {
+    def assign_attributes_to_bunker(self):
+        self.available_attributes = self.load_attributes()
+        self.set_attributes()
+
+    attribute_index = {
             "disaster": 0,
             "duration": 1,
             "rooms": 2,
             "size": 3
         }
-
-        self.available_characteristics = self.load_characteristics()
-        self.characteristics = {}
-        self.set_characteristics()
 
     key_mapping = {
         "disaster": "Катастрофа",
@@ -24,43 +26,43 @@ class Bunker:
     }
 
     # Метод для загрузки характеристик из текстового файла
-    def load_characteristics(self, filename="bunker_characteristics.txt"):
-        characteristics = {}
+    def load_attributes(self, filename="bunker_attributes.txt"):
+        attributes = {}
         with open(filename, "r", encoding="utf-8") as file:
             for line in file:
                 line = line.strip()
                 if line:
                     key, values = line.split(">")
                     items = values.split(";")
-                    characteristics[key] = []
+                    attributes[key] = []
                     for item in items:
-                        characteristics[key].append(item)
-        return characteristics
+                        attributes[key].append(item)
+        return attributes
     
-    def set_characteristic(self, characteristic):
-        options = [value for value in self.available_characteristics[characteristic]]
+    def set_attribute(self, attribute):
+        options = [value for value in self.available_attributes[attribute]]
 
         if options:
-            if characteristic == "rooms":
+            if attribute == "rooms":
                 # Для "rooms" выбираем случайное количество значений от 1 до 5
                 num_values = random.randint(1, 5)
-                self.characteristics[characteristic] = random.sample(options, min(num_values, len(options)))
-                logger.info(f"{characteristic.capitalize()} установлена как: {', '.join(self.characteristics[characteristic])}")
+                self.attributes[attribute] = random.sample(options, min(num_values, len(options)))
+                logger.debug(f"{attribute.capitalize()} установлена как: {', '.join(self.attributes[attribute])}")
             else:
                 # Для остальных характеристик выбираем одно значение
-                self.characteristics[characteristic] = random.choice(options)
-                logger.info(f"{characteristic.capitalize()} установлена как: {self.characteristics[characteristic]}")
+                self.attributes[attribute] = random.choice(options)
+                logger.debug(f"{attribute.capitalize()} установлена как: {self.attributes[attribute]}")
         else:
-            logger.info(f"Характеристика {characteristic} не найдена")
+            logger.warning(f"Характеристика {attribute} не найдена")
 
 
-    def set_characteristics(self):
-        for key in self.characteristic_index:
-            self.set_characteristic(key)
+    def set_attributes(self):
+        for key in self.attribute_index:
+            self.set_attribute(key)
 
     def return_info(self):
         message = "Информация о бункере:\n"
-        for key, value in self.characteristics.items():
+        for key, value in self.attributes.items():
             name = Bunker.key_mapping.get(key, key)  # Получаем русское название характеристики
 
             # Если значение — это список, форматируем как строку с запятыми
@@ -79,4 +81,5 @@ class Bunker:
 
 if __name__ == "__main__":
     bunker = Bunker(10)
+    bunker.assign_attributes_to_bunker()
     print(bunker.return_info())
