@@ -4,6 +4,7 @@ import random
 class Bunker:
     def __init__(self, number_of_players):
         self.numb_of_players = number_of_players
+        self.alive_players = number_of_players//2
         self.attributes = {}
         logger.info("Экземпляр класса Bunker создан")
 

@@ -25,7 +25,7 @@ async def call_admin_session_menu(update: Update, context: ContextTypes.DEFAULT_
 
 # Меню сессии пользователя
 user_session_menu = [
-    ["Участники"],
+    ["Участники", "Игроки"],
     ["Отключиться"]
 ]
 
