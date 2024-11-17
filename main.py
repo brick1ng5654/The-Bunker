@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, Poll
 from telegram.ext import Application, CommandHandler, CallbackContext, filters, MessageHandler, ContextTypes
 from logger import logger
 import os
@@ -97,6 +97,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         elif text == "голосование":
             await vote_for_kick(update, context)
+            return
+        elif text == "выгнанть игрока":
+            await handle_poll(update, context)
             return
         else:
             # Проверяем, содержится ли текст в key_mapping
@@ -292,15 +295,15 @@ async def join_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Команда создания игры
 async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global game_active, users_number, players, bunker
+    global game_active, players_number, players, bunker
     user = update.message.from_user
     try:
         if admin.id == user.id:
             game_active = True
             for user_id, user_info in users.items():
-                players[user_id] = Player(*user_info, users_number)
-                users_number+=1
-            bunker = Bunker(users_number)
+                players_number+=1
+                players[user_id] = Player(*user_info, players_number)
+            bunker = Bunker(players_number)
             logger.info(f"Игра начата. Список игрков: {players.keys()}")
             await notify_all_members(players, context, "Игра начинается! Желаю приятной игры и веселья!")
             players_without_admin = {user_id: player for user_id, player in players.items() if user_id != admin.id}
@@ -372,6 +375,28 @@ async def vote_for_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Начать голосование может только администратор сессии")
         return
     notify_all_members(players, context, "Начинается голосование за изгнание игрока!")
+    question = "Кого следует выгнать?"
+    options = []
+    for player in players.values():
+        options.append(f"Игрок №{player.player_number}")
+    is_anon = False
+
+    await update.message.reply_poll(question, options, is_anonymous=is_anon)
+
+# Обработка завершённого голосования
+async def handle_poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    poll = update.poll
+    results = poll.options  # Результаты голосования
+    question = poll.question  # Вопрос голосования
+    logger.info(f"{results}")
+
+    # Формируем сообщение с результатами
+    results_message = f"Результаты голосования: {question}\n"
+    for option in results:
+        results_message += f"{option.text}: {option.voter_count} голосов\n"
+
+    # Отправляем результаты
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=results_message)
 
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
