@@ -96,7 +96,7 @@ vote_menu = [
 vote_menu_reply_markup = ReplyKeyboardMarkup(vote_menu, resize_keyboard=True, one_time_keyboard=False)
 
 async def call_vote_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, message="Меню голосования:"):
-    await update.message.reply_text(message, vote_menu_reply_markup)
+    await update.message.reply_text(message, reply_markup=vote_menu_reply_markup)
 
 # Кнопка выхода назад
 

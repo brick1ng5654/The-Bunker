@@ -96,6 +96,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await print_bunker_info(update, context)
             return
         elif text == "голосование":
+            await vote_menu(update, context)
+            return
+        elif text == "провести голосование":
             await vote_for_kick(update, context)
             return
         elif text == "выгнанть игрока":
@@ -208,7 +211,7 @@ async def create_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session_active = True
     users_number = 1
     admin = user
-    users[user.id] = [user.id, user.first_name, user.username] #### change to user, that dict has objects
+    users[user.id] = user
 
     await session_menu(update, context)
 
@@ -218,10 +221,10 @@ async def members(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if session_active:
         if(user.id in users.keys()):
-            await update.message.reply_text(f"Список участников сессии ({len(users)}):")
-            for player_info in users.values():
-                await update.message.reply_text(f"{player_info[1]}")
             logger.debug(f"Вывод списка участников сессии пользователем {user.id} ({user.username})")
+            await update.message.reply_text(f"Список участников сессии ({len(users)}):")
+            for user in users.values():
+                await update.message.reply_text(f"{user.first_name}")
             return
         else:
             logger.debug(f"Пользователь {user.id} ({user.username}) не подлкюченный к сессии попытался вывести список участников")
@@ -287,7 +290,7 @@ async def join_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if(session_active):
         message = f"Пользователь {user.username} присоединился к сессии!"
         await notify_all_members(users, context, message)
-        users[user.id] = [user.id, user.first_name, user.username]
+        users[user.id] = user
         logger.info(f"{user.id} ({user.username}) присоединился к сессии {admin.id} ({admin.username})")
         await session_menu(update, context)
     else:
@@ -302,7 +305,7 @@ async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
             game_active = True
             for user_id, user_info in users.items():
                 players_number+=1
-                players[user_id] = Player(user, players_number)
+                players[user_id] = Player(users[user_id], players_number)
                 players[user_id].assign_attributes_to_player()
             bunker = Bunker(players_number)
             bunker.assign_attributes_to_bunker()
@@ -344,7 +347,7 @@ async def reveal_atribute(update: Update, context: ContextTypes.DEFAULT_TYPE, at
         await update.message.reply_text("Вы раскрыли характеристику!")
 
 async def print_all_players_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.debug("Начало вывода информации об игроках")
+    logger.debug(f"Начало вывода информации об игроках {players.keys()}")
     for player_id, player in players.items():
         logger.debug(f"Вывод информации о {player.user_id} ({player.user_username})")
         message = f"({player.player_number}) {player.user_name}:\n"
@@ -370,6 +373,9 @@ async def print_bunker_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Игра ещё не начата!")
 
+async def vote_menu(update: Update, context:ContextTypes.DEFAULT_TYPE):
+    await call_vote_menu(update, context)
+
 async def vote_for_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
 
@@ -383,7 +389,9 @@ async def vote_for_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
         options.append(f"Игрок №{player.player_number}")
     is_anon = False
 
-    await update.message.reply_poll(question, options, is_anonymous=is_anon)
+    for player_id in players.keys():
+        await context.bot.send_poll(chat_id=player_id, question=question, options=options)
+
 
 # Обработка завершённого голосования
 async def handle_poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
