@@ -25,6 +25,9 @@ bunker = None # Object
 session_active = False # Активна ли сессия
 game_active = False # Активна ли игра
 
+# Глобальная переменная, содержащая все сессии — экземпляры класса Session
+sessions = {}
+
 # Отправка сообщения text пользователю member_id
 async def reply_message_to_member(context: ContextTypes.DEFAULT_TYPE, member_id, text, reply_markup=""):
     try:
@@ -243,7 +246,6 @@ async def join_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await reply_message_to_member(context, user.id, "Активных сессий на данный момент нет")
 
-
 # Команда вызова вывода списка всех участников сессии
 async def members(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
@@ -349,6 +351,7 @@ async def create_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"{e}", exc_info=True)
         return
 
+# Команда вывода характеристик профиля и вызов меню профиля
 async def my_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
 
@@ -361,6 +364,7 @@ async def my_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await reply_message_to_member(context, user.id, "Чтобы вызвать меню профиля, вы должны находиться в игре")
         logger.debug(f"Пользователь {user.id} попытался вызвать меню профиля вне игры")
 
+# Команда вызова меню раскрытия характеристики
 async def reveal_atribute_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
 
@@ -371,6 +375,7 @@ async def reveal_atribute_menu(update: Update, context: ContextTypes.DEFAULT_TYP
         await reply_message_to_member(context, user.id, "Чтобы раскрыть характеристику, вы должны находиться в игре")
         logger.debug(f"Пользователь {user.id} попытался раскрыть характеристику вне игры")
 
+# Команда выхова раскрытия характеристики
 async def reveal_atribute(update: Update, context: ContextTypes.DEFAULT_TYPE, atribute):
     user = update.message.from_user
 
@@ -386,6 +391,7 @@ async def reveal_atribute(update: Update, context: ContextTypes.DEFAULT_TYPE, at
         await reply_message_to_member(context, user.id, "Чтобы раскрыть характеристику, вы должны находиться в игре")
         logger.debug(f"Пользователь {user.id} попытался раскрыть характеристику вне игры")
 
+# Команда вывода известной информации обо всех игроках
 async def print_all_players_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
 
@@ -412,6 +418,7 @@ async def print_all_players_info(update: Update, context: ContextTypes.DEFAULT_T
         await reply_message_to_member(context, user.id, "Чтобы вызвать ифнормацию об игроках, игра должна быть запущена")
         logger.debug(f"Пользователь {user.id} попытался вызвать информацию об ихгроках вне игры")
 
+# Команда вывода информации о бункере
 async def print_bunker_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
 
@@ -422,9 +429,11 @@ async def print_bunker_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await reply_message_to_member(context, user.id, "Чтобы узнать ифнормацию о бункере, вы должны находиться в игре")
 
+# Команда вызова меню голосования
 async def vote_menu(update: Update, context:ContextTypes.DEFAULT_TYPE):
     await call_vote_menu(update, context)
 
+# Команда вызова голосования
 async def vote_for_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
 
@@ -465,6 +474,7 @@ async def handle_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # Логирование
     logger.debug(f"Пользователь {user_id} проголосовал за {selected_option_ids}")
 
+# Обработка голосов и изгнанного
 async def define_voted_player(votes, options):
     results = {option: 0 for option in options}  # Инициализация счетчиков для каждого варианта
     for poll in votes.values():  # Для каждого опроса
@@ -483,9 +493,10 @@ async def define_voted_player(votes, options):
             votes_for_winner = votes
 
     winner = int(winner.replace("Игрок №", ""))
-    logger.info(f"{winner} and {votes_for_winner}")
+    logger.debug(f"Исключён игрок №{winner}. Количество голосов за: {votes_for_winner}")
     return winner, votes_for_winner
 
+# Команда исключения игрока
 async def kick_voted_player(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global admin_id, game_active, players
     if "poll_ids" not in context.chat_data:
@@ -512,7 +523,11 @@ async def kick_voted_player(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await reply_message_to_member(context, admin_id, "Меню игры:", reply_markup=admin_game_menu_reply_markup)
                     await reply_message_to_member(context, winner_id, "Меню игры:", reply_markup=user_session_menu_reply_markup)
             else:
-                await reply_message_to_members(context, users, f"Игра окончена! {players.keys()} выжили", reply_markup=user_session_menu_reply_markup)
+                message = f"Игра окончена! Игроки "
+                for player in players.values():
+                    message+=f"{player.user_name}, "
+                message+=" выжили! Поздравляю с победой!"
+                await reply_message_to_members(context, users, message, reply_markup=user_session_menu_reply_markup)
                 await reply_message_to_member(context, admin_id, "Меню сессии:", reply_markup=admin_session_menu_reply_markup)
                 players.clear()
                 game_active = False
